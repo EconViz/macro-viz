@@ -1,0 +1,59 @@
+from __future__ import annotations
+
+import ast
+from pathlib import Path
+
+PACKAGE_ROOT = Path(__file__).parents[1] / "src" / "macro_viz"
+DOMAIN_MODULES = (
+    "accounts",
+    "cycles",
+    "keynesian",
+    "adas",
+    "money",
+    "islm",
+    "inflation",
+    "growth",
+    "dynamics",
+    "new_keynesian",
+    "graduate",
+    "open_economy",
+    "transmission",
+)
+
+
+def _imports(path: Path) -> set[str]:
+    tree = ast.parse(path.read_text(encoding="utf-8"))
+    names: set[str] = set()
+    for node in ast.walk(tree):
+        if isinstance(node, ast.Import):
+            names.update(alias.name for alias in node.names)
+        elif isinstance(node, ast.ImportFrom) and node.module:
+            names.add(node.module)
+    return names
+
+
+def _imports_matching(path: Path, package: str) -> list[str]:
+    return sorted(
+        name for name in _imports(path) if name == package or name.startswith(f"{package}.")
+    )
+
+
+def test_macro_viz_never_imports_matplotlib() -> None:
+    offenders = {
+        path.relative_to(PACKAGE_ROOT): imports
+        for path in PACKAGE_ROOT.rglob("*.py")
+        if (imports := _imports_matching(path, "matplotlib"))
+    }
+    assert offenders == {}
+
+
+def test_economic_domain_does_not_import_mosaickit() -> None:
+    roots = (PACKAGE_ROOT / name for name in DOMAIN_MODULES)
+    offenders = {
+        path.relative_to(PACKAGE_ROOT): imports
+        for root in roots
+        if root.exists()
+        for path in root.rglob("*.py")
+        if (imports := _imports_matching(path, "mosaickit"))
+    }
+    assert offenders == {}
