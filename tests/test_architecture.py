@@ -1,11 +1,12 @@
 from __future__ import annotations
 
 import ast
+import sys
 from pathlib import Path
 
-try:
-    import tomllib  # type: ignore[import-not-found]
-except ImportError:  # pragma: no cover - Python 3.10 only
+if sys.version_info >= (3, 11):
+    import tomllib
+else:  # pragma: no cover - Python 3.10 only
     import tomli as tomllib
 
 PACKAGE_ROOT = Path(__file__).parents[1] / "src" / "macro_viz"
