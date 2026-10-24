@@ -5,6 +5,7 @@ from __future__ import annotations
 from collections.abc import Iterable, Sequence
 
 from mosaickit import AxisMarkLayer, AxisSpec, Canvas, CanvasSpec, PathLayer, TextLayer, build_axes
+from mosaickit.styles.nudge import Nudge
 
 from macro_viz.config import active_config
 from macro_viz.errors import ValidationError
@@ -32,7 +33,7 @@ def observed_range(
     return (low - padding, high + padding)
 
 
-def date_mark_layers(series: TimeSeries, *, maximum: int = 6) -> list[AxisMarkLayer]:
+def date_mark_layers(series: TimeSeries, *, maximum: int = 5) -> list[AxisMarkLayer]:
     count = len(series.dates)
     if count <= maximum:
         indices = tuple(range(count))
@@ -47,6 +48,22 @@ def date_mark_layers(series: TimeSeries, *, maximum: int = 6) -> list[AxisMarkLa
             role="axes",
         )
         for index in indices
+    ]
+
+
+def value_mark_layers(y_range: tuple[float, float], *, count: int = 5) -> list[AxisMarkLayer]:
+    """Evenly spaced value labels for a continuous vertical axis."""
+    low, high = y_range
+    values = tuple(low + index * (high - low) / (count - 1) for index in range(count))
+    return [
+        AxisMarkLayer(
+            "y",
+            value,
+            f"{value:,.4g}",
+            id=f"macro.axis.value.{index}",
+            role="axes",
+        )
+        for index, value in enumerate(values)
     ]
 
 
@@ -68,16 +85,29 @@ def path_segments(series: TimeSeries) -> tuple[tuple[tuple[float, float], ...], 
 
 def series_layers(specs: Sequence[SeriesSpec]) -> list[PathLayer | TextLayer]:
     layers: list[PathLayer | TextLayer] = []
+    observed_by_id: dict[str, list[tuple[int, float]]] = {}
+    for series, layer_id, _, _ in specs:
+        observed_by_id[layer_id] = [
+            (index, value) for index, value in enumerate(series.values) if value is not None
+        ]
+    final_values = {
+        layer_id: observed[-1][1] for layer_id, observed in observed_by_id.items() if observed
+    }
+    unique_final_values = set(final_values.values())
     for series, layer_id, role, label in specs:
         segments = path_segments(series)
         for index, points in enumerate(segments):
             segment_id = layer_id if len(segments) == 1 else f"{layer_id}.segment.{index}"
             layers.append(PathLayer(points, id=segment_id, role=role, legend=label))
-        observed = [
-            (index, value) for index, value in enumerate(series.values) if value is not None
-        ]
+        observed = observed_by_id[layer_id]
         if observed:
             index, value = observed[-1]
+            nudge = None
+            if len(unique_final_values) > 1:
+                if value == max(unique_final_values):
+                    nudge = Nudge(dy=6)
+                elif value == min(unique_final_values):
+                    nudge = Nudge(dy=-6)
             layers.append(
                 TextLayer(
                     (index, value),
@@ -86,6 +116,7 @@ def series_layers(specs: Sequence[SeriesSpec]) -> list[PathLayer | TextLayer]:
                     role=role,
                     anchor="left",
                     offset=(5, 0),
+                    nudge=nudge,
                 )
             )
     return layers
@@ -120,6 +151,7 @@ def dated_series_canvas(
     canvas.extend(before)
     canvas.extend(build_axes(AxisSpec(x_range), AxisSpec(y_range)))
     canvas.extend(date_mark_layers(reference))
+    canvas.extend(value_mark_layers(y_range))
     canvas.extend(series_layers(specs))
     canvas.extend(after)
     return canvas

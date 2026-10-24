@@ -63,6 +63,13 @@ def test_index_base_must_name_a_present_period_and_matching_value() -> None:
         )
 
 
+def test_index_base_rejects_boolean_and_nonfinite_values() -> None:
+    with pytest.raises(ValidationError, match="positive and finite"):
+        IndexBase(DATES[0], True)
+    with pytest.raises(ValidationError, match="positive and finite"):
+        IndexBase(DATES[0], float("inf"))
+
+
 def test_with_values_preserves_dates_and_replaces_requested_metadata() -> None:
     source = TimeSeries("CPI", DATES, (100, 105, 110), "index", IndexBase(DATES[0]))
 

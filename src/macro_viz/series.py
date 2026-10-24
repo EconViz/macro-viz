@@ -23,8 +23,14 @@ class IndexBase:
     def __post_init__(self) -> None:
         if not isinstance(self.period, date):
             raise ValidationError("index base period must be a date")
-        if not math.isfinite(self.value) or self.value <= 0:
+        if (
+            isinstance(self.value, bool)
+            or not isinstance(self.value, Real)
+            or not math.isfinite(self.value)
+            or self.value <= 0
+        ):
             raise ValidationError("index base value must be positive and finite")
+        object.__setattr__(self, "value", float(self.value))
 
 
 @dataclass(frozen=True, slots=True)

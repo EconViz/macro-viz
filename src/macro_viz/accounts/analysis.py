@@ -46,6 +46,10 @@ def analyze_gdp_series(
     nominal.require_aligned(real)
     if base_period not in nominal.dates:
         raise ValidationError("GDP deflator base period must be present in the series dates")
+    if any(value is not None and value <= 0 for value in nominal.values):
+        raise ValidationError("observed nominal GDP must be positive")
+    if any(value is not None and value <= 0 for value in real.values):
+        raise ValidationError("observed real GDP must be positive")
     values: list[Observation] = []
     for nominal_value, real_value in zip(nominal.values, real.values, strict=True):
         if nominal_value is None or real_value is None:
@@ -75,6 +79,8 @@ def calculate_inflation(price_index: TimeSeries, *, periods: int = 1) -> Inflati
         raise ValidationError("inflation periods must be a positive integer")
     if periods >= len(price_index.values):
         raise ValidationError("inflation periods must be shorter than the series")
+    if any(value is not None and value <= 0 for value in price_index.values):
+        raise ValidationError("observed price-index values must be positive")
     values: list[Observation] = [None] * periods
     for current, previous in zip(
         price_index.values[periods:], price_index.values[:-periods], strict=True
@@ -97,16 +103,18 @@ def calculate_inflation(price_index: TimeSeries, *, periods: int = 1) -> Inflati
 def analyze_labor_market(labor_force: TimeSeries, employment: TimeSeries) -> LaborMarketResult:
     """Derive unemployment levels and rates from labour force and employment."""
     labor_force.require_aligned(employment)
+    if any(value is not None and value <= 0 for value in labor_force.values):
+        raise ValidationError("observed labor force must be positive")
+    if any(value is not None and value < 0 for value in employment.values):
+        raise ValidationError("observed employment must be non-negative")
     unemployed: list[Observation] = []
     rates: list[Observation] = []
     for force, employed in zip(labor_force.values, employment.values, strict=True):
         if force is None or employed is None:
             unemployed.append(None)
             rates.append(None)
-        elif force <= 0:
-            raise ValidationError("observed labor force must be positive")
-        elif employed < 0 or employed > force:
-            raise ValidationError("employment must be between zero and the labor force")
+        elif employed > force:
+            raise ValidationError("observed employment must not exceed the labor force")
         else:
             count = force - employed
             unemployed.append(count)

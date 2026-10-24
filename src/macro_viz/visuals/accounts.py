@@ -12,6 +12,7 @@ from mosaickit import (
     TextLayer,
     build_axes,
 )
+from mosaickit.styles.nudge import Nudge
 
 from macro_viz.accounts.models import (
     GDPDecompositionResult,
@@ -21,7 +22,7 @@ from macro_viz.accounts.models import (
 )
 from macro_viz.errors import ValidationError
 from macro_viz.series import TimeSeries
-from macro_viz.visuals._common import dated_series_canvas, new_canvas
+from macro_viz.visuals._common import dated_series_canvas, new_canvas, value_mark_layers
 
 
 def gdp_decomposition_canvas(result: GDPDecompositionResult, *, title: str | None = None) -> Canvas:
@@ -51,6 +52,7 @@ def gdp_decomposition_canvas(result: GDPDecompositionResult, *, title: str | Non
         )
     )
     canvas.extend(build_axes(AxisSpec(x_range), AxisSpec(y_range)))
+    canvas.extend(value_mark_layers(y_range))
     running = 0.0
     for index, (name, symbol, value, role) in enumerate(components, start=1):
         next_level = running + value
@@ -67,12 +69,21 @@ def gdp_decomposition_canvas(result: GDPDecompositionResult, *, title: str | Non
                 role=role,
             )
         )
+        label_position = (index, (bottom + top) / 2)
+        label_anchor = "center"
+        label_nudge = None
+        if value < 0:
+            label_position = (index, next_level)
+            label_anchor = "top"
+            label_nudge = Nudge(dy=-7)
         canvas.add(
             TextLayer(
-                (index, (bottom + top) / 2),
+                label_position,
                 f"{value:g}",
                 id=f"macro.accounts.gdp.component.{name}.label",
                 role=role,
+                anchor=label_anchor,
+                nudge=label_nudge,
             )
         )
         canvas.add(

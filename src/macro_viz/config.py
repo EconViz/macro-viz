@@ -135,7 +135,7 @@ SCHEMA = econ_toml.register(
             "stroke.series": "primary series width in points",
             "stroke.secondary": "secondary series width in points",
             "stroke.guide": "guide width in points",
-            "marker.turning_point": "turning-point marker area in points squared",
+            "marker.turning_point": "turning-point marker diameter in points",
         },
     )
 )
@@ -159,7 +159,7 @@ class Config(SCHEMA.config_class()):  # type: ignore[misc]
 
 
 def active_config() -> Config:
-    """The active configuration, or the built-in manual defaults."""
+    """The active configuration, or the built-in colored defaults."""
     active = Config.active()
     return active if active is not None else Config()
 

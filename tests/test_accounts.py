@@ -77,6 +77,26 @@ def test_gdp_deflator_rejects_an_inconsistent_base_period() -> None:
         analyze_gdp_series(nominal, real, base_period=DATES[0])
 
 
+@pytest.mark.parametrize(
+    ("nominal_values", "real_values", "message"),
+    [
+        ((100, -1, None, 120), (100, None, 102, 103), "nominal GDP must be positive"),
+        ((100, None, 110, 120), (100, -1, 102, 103), "real GDP must be positive"),
+    ],
+)
+def test_gdp_series_rejects_invalid_observations_even_when_counterpart_is_missing(
+    nominal_values: tuple[float | None, ...],
+    real_values: tuple[float | None, ...],
+    message: str,
+) -> None:
+    with pytest.raises(ValidationError, match=message):
+        analyze_gdp_series(
+            series("Nominal GDP", nominal_values),
+            series("Real GDP", real_values),
+            base_period=DATES[0],
+        )
+
+
 def test_inflation_uses_lagged_percentage_change_and_propagates_missing_values() -> None:
     cpi = series("CPI", (100, 105, None, 115), "index", IndexBase(DATES[0]))
 
@@ -102,6 +122,13 @@ def test_multi_period_inflation_uses_the_requested_observation_lag() -> None:
     assert result.inflation_rate.values[3] == pytest.approx(15.238095)
 
 
+def test_inflation_rejects_a_nonpositive_observation_next_to_missing_data() -> None:
+    cpi = series("CPI", (100, None, -1, None), "index", IndexBase(DATES[0]))
+
+    with pytest.raises(ValidationError, match="price-index values must be positive"):
+        calculate_inflation(cpi)
+
+
 def test_labor_market_derives_unemployment_levels_and_rates() -> None:
     labor_force = series("Labor force", (100, 102, None, 105), "millions")
     employment = series("Employment", (95, 96, 99, 100), "millions")
@@ -121,12 +148,28 @@ def test_labor_market_derives_unemployment_levels_and_rates() -> None:
     ("force", "employment", "message"),
     [
         ((0, 100, 100, 100), (0, 90, 90, 90), "labor force must be positive"),
-        ((100, 100, 100, 100), (101, 90, 90, 90), "between zero"),
-        ((100, 100, 100, 100), (-1, 90, 90, 90), "between zero"),
+        ((100, 100, 100, 100), (101, 90, 90, 90), "not exceed"),
+        ((100, 100, 100, 100), (-1, 90, 90, 90), "non-negative"),
     ],
 )
 def test_labor_market_rejects_impossible_observed_levels(
     force: tuple[float, ...], employment: tuple[float, ...], message: str
+) -> None:
+    with pytest.raises(ValidationError, match=message):
+        analyze_labor_market(series("Labor force", force), series("Employment", employment))
+
+
+@pytest.mark.parametrize(
+    ("force", "employment", "message"),
+    [
+        ((100, -1, 100, 100), (90, None, 90, 90), "labor force must be positive"),
+        ((100, None, 100, 100), (90, -1, 90, 90), "employment must be non-negative"),
+    ],
+)
+def test_labor_market_validates_observed_values_with_a_missing_counterpart(
+    force: tuple[float | None, ...],
+    employment: tuple[float | None, ...],
+    message: str,
 ) -> None:
     with pytest.raises(ValidationError, match=message):
         analyze_labor_market(series("Labor force", force), series("Employment", employment))

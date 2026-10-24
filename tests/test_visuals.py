@@ -1,8 +1,9 @@
 from __future__ import annotations
 
 from datetime import date
+from pathlib import Path
 
-from mosaickit import FillLayer, MarkerLayer, PathLayer
+from mosaickit import FillLayer, MarkerLayer, PathLayer, TextLayer
 
 from macro_viz import IndexBase, TimeSeries
 from macro_viz.accounts import (
@@ -60,6 +61,15 @@ def test_gdp_decomposition_has_stable_namespaced_ids_and_optional_title() -> Non
         layer.id == "axes.frame" or layer.id.startswith("macro.")
         for layer in untitled.snapshot().layers
     )
+    assert "macro.axis.value.0" in layer_ids(untitled)
+    net_exports_label = next(
+        layer
+        for layer in untitled.snapshot().layers
+        if layer.id == "macro.accounts.gdp.component.net_exports.label"
+    )
+    assert isinstance(net_exports_label, TextLayer)
+    assert net_exports_label.nudge is not None
+    assert net_exports_label.nudge.dy < 0
 
 
 def test_account_series_visuals_expose_each_economic_series() -> None:
@@ -77,6 +87,7 @@ def test_account_series_visuals_expose_each_economic_series() -> None:
         "macro.accounts.gdp.nominal",
         "macro.accounts.gdp.real",
     } <= layer_ids(gdp_levels_canvas(gdp))
+    assert "macro.axis.value.0" in layer_ids(gdp_levels_canvas(gdp))
     assert "macro.accounts.price.index" in layer_ids(gdp_deflator_canvas(gdp))
     assert "macro.accounts.price.index" in layer_ids(price_index_canvas(cpi))
     assert "macro.accounts.inflation.rate" in layer_ids(inflation_canvas(inflation))
@@ -107,6 +118,17 @@ def test_business_cycle_visual_has_recession_turning_and_gap_layers() -> None:
         "macro.cycles.peak.0",
         "macro.cycles.trough.0",
     } <= layer_ids(cycle)
+    output_label = next(
+        layer for layer in cycle.snapshot().layers if layer.id == "macro.cycles.output.label"
+    )
+    trend_label = next(
+        layer for layer in cycle.snapshot().layers if layer.id == "macro.cycles.trend.label"
+    )
+    assert isinstance(output_label, TextLayer)
+    assert isinstance(trend_label, TextLayer)
+    assert output_label.nudge is not None
+    assert trend_label.nudge is not None
+    assert trend_label.nudge.dy < 0 < output_label.nudge.dy
     assert isinstance(
         next(layer for layer in cycle.snapshot().layers if layer.id == "macro.cycles.recession.0"),
         FillLayer,
@@ -139,3 +161,17 @@ def test_missing_values_split_paths_instead_of_connecting_across_gaps() -> None:
     ]
     assert output_paths[0].path == ((0.0, 100.0), (1.0, 101.0))
     assert output_paths[1].path[0] == (3.0, 103.0)
+
+
+def test_canvas_renders_and_saves_through_mosaickit(tmp_path: Path) -> None:
+    result = analyze_gdp_components(GDPComponents(60, 20, 25, -5, "billions"))
+    canvas = gdp_decomposition_canvas(result)
+
+    png = tmp_path / "gdp.png"
+    rendered = canvas.render()
+    try:
+        canvas.save(png)
+    finally:
+        rendered.close()
+
+    assert png.stat().st_size > 0
