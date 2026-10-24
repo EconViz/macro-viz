@@ -52,4 +52,3 @@ theme roles and examples tied to a genuine consumer instead of making unused pub
 Future package settings will be declared as a MosaicKit schema under `[macro.*]`; MosaicKit will
 continue to own parsing of the shared `econ-viz.toml` file, themes, rendering, and per-figure label
 overrides.
-

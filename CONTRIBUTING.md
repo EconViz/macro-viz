@@ -28,4 +28,3 @@ Keep changes within the package boundary documented in the project roadmap and a
 every public behavior.
 
 Generated images, caches, build output, and local agent instructions must not be committed.
-
