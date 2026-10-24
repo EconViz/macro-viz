@@ -1,6 +1,6 @@
 [project]
 name = "macro-viz"
-version = "0.1.0.dev0"
+version = "0.2.0.dev0"
 description = "Textbook macroeconomic analysis and diagrams for EconViz."
 readme = "README.md"
 authors = [{ name = "EconViz" }]
@@ -51,7 +51,6 @@ select = ["E", "F", "I", "UP", "B"]
 
 [tool.mypy]
 files = ["src", "tests"]
-python_version = "3.10"
 strict = true
 
 [tool.pytest.ini_options]

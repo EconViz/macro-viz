@@ -13,6 +13,9 @@ __pycache__/
 build/
 dist/
 
+examples/output/**
+!examples/output/.gitkeep
+
 .DS_Store
 .idea/
 .vscode/

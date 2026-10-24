@@ -4,8 +4,15 @@ import macro_viz
 
 
 def test_package_version() -> None:
-    assert macro_viz.__version__ == "0.1.0.dev0"
+    assert macro_viz.__version__ == "0.2.0.dev0"
 
 
-def test_public_api_is_intentionally_minimal() -> None:
-    assert macro_viz.__all__ == ["__version__"]
+def test_shared_types_are_available_at_the_package_root() -> None:
+    assert macro_viz.__all__ == [
+        "Config",
+        "IndexBase",
+        "MacroVizError",
+        "TimeSeries",
+        "ValidationError",
+        "__version__",
+    ]

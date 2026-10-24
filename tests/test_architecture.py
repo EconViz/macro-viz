@@ -1,7 +1,13 @@
 from __future__ import annotations
 
 import ast
+import sys
 from pathlib import Path
+
+if sys.version_info >= (3, 11):
+    import tomllib
+else:  # pragma: no cover - Python 3.10 only
+    import tomli as tomllib
 
 PACKAGE_ROOT = Path(__file__).parents[1] / "src" / "macro_viz"
 DOMAIN_MODULES = (
@@ -57,3 +63,11 @@ def test_economic_domain_does_not_import_mosaickit() -> None:
         if (imports := _imports_matching(path, "mosaickit"))
     }
     assert offenders == {}
+
+
+def test_p0_has_only_mosaickit_as_a_direct_graphics_dependency() -> None:
+    project = tomllib.loads((PACKAGE_ROOT.parents[1] / "pyproject.toml").read_text("utf-8"))[
+        "project"
+    ]
+
+    assert project["dependencies"] == ["mosaickit>=1.0.0rc9,<2"]
