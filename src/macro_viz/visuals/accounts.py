@@ -22,7 +22,12 @@ from macro_viz.accounts.models import (
 )
 from macro_viz.errors import ValidationError
 from macro_viz.series import TimeSeries
-from macro_viz.visuals._common import dated_series_canvas, new_canvas, value_mark_layers
+from macro_viz.visuals._common import (
+    axis_label_layers,
+    dated_series_canvas,
+    new_canvas,
+    value_mark_layers,
+)
 
 
 def gdp_decomposition_canvas(result: GDPDecompositionResult, *, title: str | None = None) -> Canvas:
@@ -53,6 +58,15 @@ def gdp_decomposition_canvas(result: GDPDecompositionResult, *, title: str | Non
     )
     canvas.extend(build_axes(AxisSpec(x_range), AxisSpec(y_range)))
     canvas.extend(value_mark_layers(y_range))
+    canvas.extend(
+        axis_label_layers(
+            x_range,
+            y_range,
+            x_label="Component",
+            y_label=c.unit,
+            x_id="macro.axis.component.label",
+        )
+    )
     running = 0.0
     for index, (name, symbol, value, role) in enumerate(components, start=1):
         next_level = running + value

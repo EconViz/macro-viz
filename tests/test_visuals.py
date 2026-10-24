@@ -88,6 +88,10 @@ def test_account_series_visuals_expose_each_economic_series() -> None:
         "macro.accounts.gdp.real",
     } <= layer_ids(gdp_levels_canvas(gdp))
     assert "macro.axis.value.0" in layer_ids(gdp_levels_canvas(gdp))
+    assert {
+        "macro.axis.date.label",
+        "macro.axis.unit.label",
+    } <= layer_ids(gdp_levels_canvas(gdp))
     assert "macro.accounts.price.index" in layer_ids(gdp_deflator_canvas(gdp))
     assert "macro.accounts.price.index" in layer_ids(price_index_canvas(cpi))
     assert "macro.accounts.inflation.rate" in layer_ids(inflation_canvas(inflation))

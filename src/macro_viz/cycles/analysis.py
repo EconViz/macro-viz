@@ -61,6 +61,10 @@ def analyze_business_cycle(
     """Combine output, trend, percentage gaps, turning points, and recession metadata."""
     resolved_trend = trend or linear_trend(output)
     output.require_aligned(resolved_trend)
+    if any(value is not None and value <= 0 for value in output.values):
+        raise ValidationError("observed output values must be positive")
+    if any(value is not None and value <= 0 for value in resolved_trend.values):
+        raise ValidationError("observed trend values must be positive")
     ordered_recessions = tuple(recessions)
     if any(
         left.end >= right.start
@@ -71,8 +75,6 @@ def analyze_business_cycle(
     for actual, potential in zip(output.values, resolved_trend.values, strict=True):
         if actual is None or potential is None:
             gaps.append(None)
-        elif potential <= 0:
-            raise ValidationError("observed trend values must be positive")
         else:
             gaps.append(100 * (actual - potential) / potential)
     gap = TimeSeries(

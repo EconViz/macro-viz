@@ -18,6 +18,7 @@ def _reset_config() -> Iterator[None]:
 def test_package_default_is_colored_on_white() -> None:
     config = Config()
 
+    assert Config.from_dict({}) == config
     assert config.theme.name == "default"
     assert config.settings.options.background == "#ffffff"
     assert config.settings.options.primary != config.settings.options.secondary

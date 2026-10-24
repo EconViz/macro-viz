@@ -82,3 +82,19 @@ def test_output_gap_rejects_nonpositive_observed_trend() -> None:
             output((100, 101, 102, 103, 104, 105, 106)),
             trend=output((100, 101, 0, 103, 104, 105, 106)),
         )
+
+
+def test_output_gap_validates_trend_when_actual_output_is_missing() -> None:
+    with pytest.raises(ValidationError, match="trend values must be positive"):
+        analyze_business_cycle(
+            output((100, 101, None, 103, 104, 105, 106)),
+            trend=output((100, 101, -1, 103, 104, 105, 106)),
+        )
+
+
+def test_business_cycle_validates_output_when_trend_is_missing() -> None:
+    with pytest.raises(ValidationError, match="output values must be positive"):
+        analyze_business_cycle(
+            output((100, -1, 102, 103, 104, 105, 106)),
+            trend=output((100, None, 102, 103, 104, 105, 106)),
+        )

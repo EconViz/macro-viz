@@ -4,7 +4,8 @@ from __future__ import annotations
 
 from bisect import bisect_left, bisect_right
 
-from mosaickit import FillLayer, MarkerLayer, PathLayer, TextLayer
+from mosaickit import Canvas, FillLayer, MarkerLayer, PathLayer, TextLayer
+from mosaickit.styles.nudge import Nudge
 
 from macro_viz.cycles.models import BusinessCycleResult, TurningPointKind
 from macro_viz.visuals._common import dated_series_canvas, observed_range
@@ -52,13 +53,13 @@ def _turning_layers(result: BusinessCycleResult) -> list[MarkerLayer | TextLayer
                 id=f"{root}.label",
                 role=role,
                 anchor="bottom" if point.kind is TurningPointKind.PEAK else "top",
-                offset=(0, 6 if point.kind is TurningPointKind.PEAK else -6),
+                nudge=Nudge(dy=6 if point.kind is TurningPointKind.PEAK else -6),
             )
         )
     return layers
 
 
-def business_cycle_canvas(result: BusinessCycleResult, *, title: str | None = None):  # type: ignore[no-untyped-def]
+def business_cycle_canvas(result: BusinessCycleResult, *, title: str | None = None) -> Canvas:
     """Draw output, trend, turning points, and recession shading."""
     return dated_series_canvas(
         (
@@ -71,7 +72,7 @@ def business_cycle_canvas(result: BusinessCycleResult, *, title: str | None = No
     )
 
 
-def output_gap_canvas(result: BusinessCycleResult, *, title: str | None = None):  # type: ignore[no-untyped-def]
+def output_gap_canvas(result: BusinessCycleResult, *, title: str | None = None) -> Canvas:
     """Draw percentage output gaps as positive and negative bars around zero."""
     bars = []
     half_width = 0.38

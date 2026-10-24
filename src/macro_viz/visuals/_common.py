@@ -4,7 +4,16 @@ from __future__ import annotations
 
 from collections.abc import Iterable, Sequence
 
-from mosaickit import AxisMarkLayer, AxisSpec, Canvas, CanvasSpec, PathLayer, TextLayer, build_axes
+from mosaickit import (
+    AxisMarkLayer,
+    AxisSpec,
+    Canvas,
+    CanvasSpec,
+    Layer,
+    PathLayer,
+    TextLayer,
+    build_axes,
+)
 from mosaickit.styles.nudge import Nudge
 
 from macro_viz.config import active_config
@@ -64,6 +73,35 @@ def value_mark_layers(y_range: tuple[float, float], *, count: int = 5) -> list[A
             role="axes",
         )
         for index, value in enumerate(values)
+    ]
+
+
+def axis_label_layers(
+    x_range: tuple[float, float],
+    y_range: tuple[float, float],
+    *,
+    x_label: str,
+    y_label: str,
+    x_id: str,
+) -> list[TextLayer]:
+    """Place public, overrideable labels outside a framed plot."""
+    return [
+        TextLayer(
+            (x_range[1], y_range[0]),
+            x_label,
+            id=x_id,
+            role="axes",
+            anchor="top",
+            nudge=Nudge(dy=-26),
+        ),
+        TextLayer(
+            (x_range[0], y_range[1]),
+            y_label,
+            id="macro.axis.unit.label",
+            role="axes",
+            anchor="bottom",
+            nudge=Nudge(dy=8),
+        ),
     ]
 
 
@@ -127,8 +165,8 @@ def dated_series_canvas(
     *,
     title: str | None,
     include_zero: bool = False,
-    before: Sequence = (),  # type: ignore[type-arg]
-    after: Sequence = (),  # type: ignore[type-arg]
+    before: Sequence[Layer] = (),
+    after: Sequence[Layer] = (),
 ) -> Canvas:
     """Build a dated line chart from aligned series specifications."""
     if not specs:
@@ -152,6 +190,15 @@ def dated_series_canvas(
     canvas.extend(build_axes(AxisSpec(x_range), AxisSpec(y_range)))
     canvas.extend(date_mark_layers(reference))
     canvas.extend(value_mark_layers(y_range))
+    canvas.extend(
+        axis_label_layers(
+            x_range,
+            y_range,
+            x_label="Date",
+            y_label=reference.unit,
+            x_id="macro.axis.date.label",
+        )
+    )
     canvas.extend(series_layers(specs))
     canvas.extend(after)
     return canvas
