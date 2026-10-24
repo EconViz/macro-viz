@@ -1,6 +1,6 @@
 [project]
 name = "macro-viz"
-version = "0.1.0.dev0"
+version = "0.2.0.dev0"
 description = "Textbook macroeconomic analysis and diagrams for EconViz."
 readme = "README.md"
 authors = [{ name = "EconViz" }]
