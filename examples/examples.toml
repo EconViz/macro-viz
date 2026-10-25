@@ -84,3 +84,22 @@ frames = 6
 step_seconds = 0.6
 fps = 10
 dpi = 100
+
+[solow]
+alpha = 0.33
+saving = 0.2
+saving_after = 0.35
+depreciation = 0.1
+population_growth = 0.0
+tech_growth = 0.0
+tech_after = 0.05
+population_after = 0.12
+productivity = 1.0
+productivity_after = 1.4
+points = [1.0, 2.0, 3.5]
+periods = 60
+change_period = 5
+frames = 6
+step_seconds = 0.6
+fps = 10
+dpi = 100

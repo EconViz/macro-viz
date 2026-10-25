@@ -31,6 +31,7 @@ All notable changes to `macro-viz` will be documented in this file.
 - `analyze_adjustment` and `adas_adjustment_canvas`: medium-run AS-AD adjustment paths (expectations,
   money expansion, deficit reduction, oil shock).
 - `macro_viz.islm`: linear IS-LM, fiscal and monetary policy with crowding out, and `islm_canvas`.
+- `macro_viz.growth`: Solow model (steady state, golden rule, transition paths) and its figures.
 - A theory-diagram kit (arrowed axes, direct curve labels, dotted guides, dashed old positions) in
   the manual style.
 - `macro_viz.animation` and the `macro-viz[animation]` extra: GIF and native animated SVG from any
