@@ -68,3 +68,19 @@ frames = 6
 step_seconds = 0.6
 fps = 10
 dpi = 100
+
+[islm]
+autonomous = 100
+sensitivity = 25
+real_money = 20
+income_demand = 0.5
+rate_demand = 10
+multiplier = 1.0
+autonomous_after = 80
+real_money_after = 32
+rate_demand_flat = 60
+rate_demand_steep = 2
+frames = 6
+step_seconds = 0.6
+fps = 10
+dpi = 100

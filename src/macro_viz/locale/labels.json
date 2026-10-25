@@ -44,7 +44,18 @@
     "adas.mark.anchor_price_shifted": "$p = p^{e'}$",
     "adas.mark.ambiguous": "?",
     "adas.note.employment": "Employment $N = Y/A$",
-    "keynesian.mark.degrees": "45°"
+    "keynesian.mark.degrees": "45°",
+    "islm.axis.output": "$Y$",
+    "islm.axis.rate": "$R$",
+    "islm.curve.is": "$IS$",
+    "islm.curve.is_shifted": "$IS'$",
+    "islm.curve.lm": "$LM$",
+    "islm.curve.lm_shifted": "$LM'$",
+    "islm.mark.output": "$Y$",
+    "islm.mark.output_shifted": "$Y'$",
+    "islm.mark.rate": "$R$",
+    "islm.mark.rate_shifted": "$R'$",
+    "islm.mark.crowding": "Crowding out"
   },
   "zh-TW": {
     "axis.origin": "0",
@@ -91,7 +102,18 @@
     "adas.mark.anchor_price_shifted": "$p = p^{e'}$",
     "adas.mark.ambiguous": "?",
     "adas.note.employment": "就業 $N = Y/A$",
-    "keynesian.mark.degrees": "45°"
+    "keynesian.mark.degrees": "45°",
+    "islm.axis.output": "$Y$",
+    "islm.axis.rate": "$R$",
+    "islm.curve.is": "$IS$",
+    "islm.curve.is_shifted": "$IS'$",
+    "islm.curve.lm": "$LM$",
+    "islm.curve.lm_shifted": "$LM'$",
+    "islm.mark.output": "$Y$",
+    "islm.mark.output_shifted": "$Y'$",
+    "islm.mark.rate": "$R$",
+    "islm.mark.rate_shifted": "$R'$",
+    "islm.mark.crowding": "排擠效果"
   },
   "zh-CN": {
     "axis.origin": "0",
@@ -138,6 +160,17 @@
     "adas.mark.anchor_price_shifted": "$p = p^{e'}$",
     "adas.mark.ambiguous": "?",
     "adas.note.employment": "就业 $N = Y/A$",
-    "keynesian.mark.degrees": "45°"
+    "keynesian.mark.degrees": "45°",
+    "islm.axis.output": "$Y$",
+    "islm.axis.rate": "$R$",
+    "islm.curve.is": "$IS$",
+    "islm.curve.is_shifted": "$IS'$",
+    "islm.curve.lm": "$LM$",
+    "islm.curve.lm_shifted": "$LM'$",
+    "islm.mark.output": "$Y$",
+    "islm.mark.output_shifted": "$Y'$",
+    "islm.mark.rate": "$R$",
+    "islm.mark.rate_shifted": "$R'$",
+    "islm.mark.crowding": "挤出效应"
   }
 }

@@ -24,6 +24,8 @@ def test_examples_write_nonempty_images(tmp_path: Path) -> None:
     run("money_animation.py", "--output", str(tmp_path))
     run("adas.py", "--output", str(tmp_path))
     run("adas_animation.py", "--output", str(tmp_path))
+    run("islm.py", "--output", str(tmp_path))
+    run("islm_animation.py", "--output", str(tmp_path))
 
     images = {image.stem: image for image in tmp_path.glob("*.svg")}
     assert {
@@ -42,6 +44,9 @@ def test_examples_write_nonempty_images(tmp_path: Path) -> None:
         "adas_employment",
         "adas_productivity",
         "adas_demand_shock",
+        "islm",
+        "islm_crowding_out",
+        "islm_monetary_expansion",
     } <= set(images)
     assert all(image.stat().st_size > 0 for image in images.values())
 
@@ -77,7 +82,7 @@ def test_no_label_overlaps_a_line_or_another_label(tmp_path: Path) -> None:
     try:
         with warnings.catch_warnings():
             warnings.simplefilter("error", LayoutWarning)
-            for name in ("keynesian", "money", "adas", "adas_adjustment"):
+            for name in ("keynesian", "money", "adas", "adas_adjustment", "islm"):
                 importlib.import_module(name).main(["--output", str(tmp_path)])
     finally:
         sys.path.remove(scripts)
