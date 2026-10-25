@@ -29,6 +29,7 @@ def test_examples_write_nonempty_images(tmp_path: Path) -> None:
     run("growth.py", "--output", str(tmp_path))
     run("growth_animation.py", "--output", str(tmp_path))
     run("wsps.py", "--output", str(tmp_path))
+    run("open_asad.py", "--output", str(tmp_path))
     run("mundell_fleming.py", "--output", str(tmp_path))
     run("open_economy.py", "--output", str(tmp_path))
     run("islm_expectations.py", "--output", str(tmp_path))
@@ -54,6 +55,7 @@ def test_examples_write_nonempty_images(tmp_path: Path) -> None:
         "adas_demand_shock",
         "islm",
         "wsps",
+        "open_asad_devaluation",
         "interest_parity",
         "open_islm_fiscal",
         "open_goods",
