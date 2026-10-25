@@ -171,3 +171,7 @@ supply_trap = 130
 supply_trap_after = 160
 autonomous_trap = 80
 x_max_trap = 300
+
+[central_bank_money]
+currency_ratio = 0.2
+reserve_ratio = 0.1

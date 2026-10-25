@@ -8,7 +8,13 @@ from mosaickit import Canvas, Layer, MarkerLayer
 
 from macro_viz.errors import ValidationError
 from macro_viz.i18n import Labels
-from macro_viz.money.models import Curve, MoneyDemand, MoneyMarket, MoneyMarketShift
+from macro_viz.money.models import (
+    Curve,
+    MoneyDemand,
+    MoneyMarket,
+    MoneyMarketShift,
+    MoneyMultiplier,
+)
 from macro_viz.visuals._theory import (
     DEFAULT_SAMPLES,
     HEADROOM,
@@ -262,3 +268,44 @@ def money_demand_canvas(
         )
     )
     return canvas
+
+
+BASE_LABELS = {
+    "money.axis.money": "money.base.axis.money",
+    "money.curve.demand": "money.base.curve.demand",
+    "money.curve.supply": "money.base.curve.supply",
+    "money.mark.money": "money.base.mark.money",
+    "money.curve.demand_shifted": "money.base.curve.demand_shifted",
+    "money.curve.supply_shifted": "money.base.curve.supply_shifted",
+    "money.mark.money_shifted": "money.base.mark.money_shifted",
+}
+"""Label ids of the money figures and the central-bank-money ids that replace them."""
+
+
+def central_bank_money_canvas(
+    multiplier: MoneyMultiplier,
+    market: MoneyMarket | MoneyMarketShift,
+    *,
+    labels: Mapping[str, str] | None = None,
+    **options: object,
+) -> Canvas:
+    """Draw the market for central-bank money ``H``: supply ``H`` against demand ``H^d``.
+
+    ``market`` is the market for money ``M``; both curves are rescaled by the multiplier so the
+    interest rate and the crossing are those of the money market. ``options`` are those of
+    ``money_market_canvas``.
+    """
+    text = Labels(labels)
+    renamed = {key: text(base) for key, base in BASE_LABELS.items()}
+    renamed.update(dict(labels or {}))
+    if isinstance(market, MoneyMarketShift):
+        subject: MoneyMarket | MoneyMarketShift = MoneyMarketShift(
+            multiplier.market(market.baseline),
+            multiplier.market(market.post),
+            market.curve,
+            market.rate_direction,
+            market.money_direction,
+        )
+    else:
+        subject = multiplier.market(market)
+    return money_market_canvas(subject, labels=renamed, **options)  # type: ignore[arg-type]

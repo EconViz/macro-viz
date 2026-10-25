@@ -129,7 +129,14 @@
     "panels.curve.is": "$IS$",
     "panels.curve.is_shifted": "$IS_{index}$",
     "panels.curve.lm": "$LM\\,({money}/{price})$",
-    "panels.label.diagonal": "45°"
+    "panels.label.diagonal": "45°",
+    "money.base.axis.money": "$H$",
+    "money.base.curve.demand": "$H^d$",
+    "money.base.curve.supply": "$H^s$",
+    "money.base.mark.money": "$H$",
+    "money.base.curve.demand_shifted": "$H^{d'}$",
+    "money.base.curve.supply_shifted": "$H^{s'}$",
+    "money.base.mark.money_shifted": "$H'$"
   },
   "zh-TW": {
     "axis.origin": "0",
@@ -261,7 +268,14 @@
     "panels.curve.is": "$IS$",
     "panels.curve.is_shifted": "$IS_{index}$",
     "panels.curve.lm": "$LM\\,({money}/{price})$",
-    "panels.label.diagonal": "45°"
+    "panels.label.diagonal": "45°",
+    "money.base.axis.money": "$H$",
+    "money.base.curve.demand": "$H^d$",
+    "money.base.curve.supply": "$H^s$",
+    "money.base.mark.money": "$H$",
+    "money.base.curve.demand_shifted": "$H^{d'}$",
+    "money.base.curve.supply_shifted": "$H^{s'}$",
+    "money.base.mark.money_shifted": "$H'$"
   },
   "zh-CN": {
     "axis.origin": "0",
@@ -393,6 +407,13 @@
     "panels.curve.is": "$IS$",
     "panels.curve.is_shifted": "$IS_{index}$",
     "panels.curve.lm": "$LM\\,({money}/{price})$",
-    "panels.label.diagonal": "45°"
+    "panels.label.diagonal": "45°",
+    "money.base.axis.money": "$H$",
+    "money.base.curve.demand": "$H^d$",
+    "money.base.curve.supply": "$H^s$",
+    "money.base.mark.money": "$H$",
+    "money.base.curve.demand_shifted": "$H^{d'}$",
+    "money.base.curve.supply_shifted": "$H^{s'}$",
+    "money.base.mark.money_shifted": "$H'$"
   }
 }
