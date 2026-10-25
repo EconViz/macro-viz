@@ -128,7 +128,7 @@ expected_price = 1.0
 
 [panels.drawing]
 extent = 1.5
-width = 6.0
+width = 5.6
 
 [panels.islm]
 interest_sensitivity = 2.0
