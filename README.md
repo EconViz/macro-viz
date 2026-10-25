@@ -135,6 +135,9 @@ below zero and are not drawn.
 floating-rate equilibrium `(Y, i, E)` and the fixed-rate one (`i = i*`). `interest_parity_canvas`
 and `open_islm_canvas` draw them; the side-by-side linked panels belong with the linked-panel work.
 
+`analyze_devaluation` shifts AD right by `exchange_effect * devaluation`; adjustment under a fixed
+rate is `analyze_adjustment` on the AS-AD model (`examples/scripts/open_asad.py`).
+
 ## Animation
 
 A figure about a shift or an adjustment animates from the same builder. `pip install

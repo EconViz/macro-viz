@@ -194,3 +194,8 @@ parity_slope = 40
 exchange_effect = 0.2
 fiscal_after = 120
 money_after = 35
+
+[open_asad]
+devaluation = 0.4
+exchange_effect = 50
+autonomous_slump = 35
