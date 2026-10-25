@@ -72,6 +72,17 @@ and `analyze_monetary_policy` return baseline and post models with directions an
 policy, the crowding out. `islm_canvas` draws IS, LM, A, and a shift; the three-panel
 decompositions and policy-mix panels belong with the linked-panel diagrams.
 
+## Solow growth
+
+`macro_viz.growth.Solow` takes any increasing concave production function (or
+`Solow.cobb_douglas`) with the saving rate, depreciation, and population and technology growth.
+It gives the steady state, golden-rule capital and saving rate, and one-period capital
+accumulation; `analyze_change` compares steady states, and `simulate` returns the discrete
+transition after a change (`SolowPath`: capital, output, growth rates, and log output including
+the trend of technology). Figures: `production_function_canvas`, `solow_canvas` (with convergence
+arrows), `golden_rule_canvas`, `solow_level_path_canvas`, `solow_log_path_canvas`,
+`solow_growth_rate_canvas`; `effective=True` switches the labels to per effective worker.
+
 ## Animation
 
 A figure about a shift or an adjustment animates from the same builder. `pip install
