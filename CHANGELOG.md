@@ -43,7 +43,9 @@ All notable changes to `macro-viz` will be documented in this file.
   market, production function, 45-degree line, AD-AS, and IS-LM above AD-AS) on one MosaicKit grid.
   Typed blocks solve the equilibria (`MacroEconomy`, `Shock`, `Scenario`) so a value shared between
   panels is one number; panels that show a variable share its axis range and dashed projections
-  are drawn from data. Added the `stroke.link` and `stroke.diagonal` settings.
+  are drawn from data. Added the `stroke.link` and `stroke.diagonal` settings. Row, column and
+  outer gaps are parameters, the 45-degree line is exactly 45 degrees, and labels are placed
+  beside their anchor in the emptiest direction, with a thin leader when nothing is free.
 - Executable examples that read their data, titles, output folder, and settings from files and
   arguments.
 

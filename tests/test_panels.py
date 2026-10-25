@@ -296,3 +296,31 @@ def test_every_preset_renders_without_error(tmp_path: Path) -> None:
 
     assert (tmp_path / "x.svg").stat().st_size > 0
     assert (tmp_path / "y.svg").stat().st_size > 0
+
+
+def test_row_and_column_gaps_are_parameters() -> None:
+    tight = four_panel_canvas(capital_scenario(), column_gap=0.0, row_gap=0.0)
+    loose = four_panel_canvas(capital_scenario(), column_gap=0.4, row_gap=0.4)
+
+    def gap(grid: CanvasGrid) -> float:
+        result = grid.render()
+        try:
+            boxes = [ax.get_position() for ax in result.axes]
+            return float(max(b.x0 for b in boxes) - min(b.x1 for b in boxes))
+        finally:
+            result.close()
+
+    assert gap(tight) < gap(loose)
+
+
+def test_a_crowded_label_gets_a_leader_instead_of_overlapping() -> None:
+    from macro_viz.visuals._placement import PlacementOptions, Scene, place
+
+    options = PlacementOptions()
+    scene = Scene(limits=(0.0, 0.0, 200.0, 200.0))
+    scene.add_polyline([(0.0, 100.0), (200.0, 100.0)])
+    scene.add_polyline([(100.0, 0.0), (100.0, 200.0)])
+    scene.boxes.append((105.0, 105.0, 160.0, 130.0))
+    crowded = place((100.0, 100.0), (30.0, 18.0), scene, options, ("upper-right", "right"))
+
+    assert crowded.leader is not None

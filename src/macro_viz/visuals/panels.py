@@ -12,6 +12,7 @@ from __future__ import annotations
 
 from collections.abc import Callable, Collection, Mapping, Sequence
 from dataclasses import dataclass
+from typing import Any
 
 from mosaickit import (
     ArrowPlacement,
@@ -19,6 +20,7 @@ from mosaickit import (
     Canvas,
     CanvasGrid,
     Layer,
+    MarkerLayer,
     PathLayer,
     Span,
     Stroke,
@@ -26,6 +28,7 @@ from mosaickit import (
 )
 from mosaickit.canvas.grid_link import GridLink
 
+from macro_viz.config import active_config
 from macro_viz.errors import ValidationError
 from macro_viz.i18n import Labels
 from macro_viz.panels import (
@@ -43,14 +46,30 @@ from macro_viz.panels import (
     four_panel_layout,
     shift_arrows,
 )
+from macro_viz.panels.arrows import ShiftArrow
 from macro_viz.panels.curves import DEFAULT_SAMPLES, KEY_DIGITS, CurveSpec, Subscripted
 from macro_viz.panels.layout import DIAGONAL, X_AXIS
 from macro_viz.panels.model import N, P, R, W, Y
 from macro_viz.visuals._kit import axes_layers, canvas_spec, new_canvas
-from macro_viz.visuals._theory import marked_point
+from macro_viz.visuals._placement import (
+    CURVE_ORDER,
+    POINT_ORDER,
+    Box,
+    Placed,
+    PlacementOptions,
+    Scene,
+    place,
+    text_box,
+)
 
-GRID_GAP = 0.2
-"""The gap mosaickit leaves between grid cells, as a share of a cell."""
+COLUMN_GAP = 0.12
+"""Default gap between grid columns, as a share of a column's width."""
+
+OUTER_MARGIN = 0.01
+"""Default margin around the whole figure, as a share of its size."""
+
+ROW_GAP = 0.0
+"""Default gap between grid rows, as a share of a row's height (tick labels sit inside panels)."""
 
 PANEL_WIDTH = 4.3
 """Width in inches of one grid column."""
@@ -58,8 +77,11 @@ PANEL_WIDTH = 4.3
 DEFAULT_EXTENT = 1.7
 """Axis length as a multiple of the largest solved value shown on it."""
 
-DEFAULT_PAD = {N: 0.35, Y: 0.35, W: 0.1, P: 0.1, R: 0.1}
-"""Room right of (and above) each variable's axis for curve names, as a share of its length."""
+DEFAULT_PAD = {N: 0.3, Y: 0.3, W: 0.1, P: 0.1, R: 0.1}
+"""Room right of each variable's horizontal axis for curve names, as a share of its length."""
+
+TOP_PAD = 0.08
+"""Room above a vertical axis for its arrowhead and title, as a share of its length."""
 
 MARGIN = 0.14
 """Room under and left of each axis for tick labels, as a share of the axis length."""
@@ -79,6 +101,8 @@ SYMBOL_IDS = {
 }
 """The locale id of each variable's symbol."""
 
+POINTS_PER_INCH = 72.0
+
 TICK_OFFSET = 4.0
 """Distance in points between an axis and its tick label."""
 
@@ -96,6 +120,7 @@ class _Context:
     pad: Mapping[str, float]
     labels: Labels
     margin: float
+    top_pad: float
 
     def symbol(self, variable: str) -> str:
         return self.labels(SYMBOL_IDS[variable])
@@ -106,34 +131,92 @@ class _Context:
         text = self.labels(f"panels.var.{value.symbol}")
         return text if value.index is None else f"{text}_{value.index}"
 
-    def _range(self, variable: str) -> tuple[float, float]:
+    def _range(self, variable: str, pad: float) -> tuple[float, float]:
         length = self.lengths[variable]
-        return (-self.margin * length, length * (1 + self.pad[variable]))
+        return (-self.margin * length, length * (1 + pad))
 
     def x_range(self, panel: PanelSpec) -> tuple[float, float]:
-        return self._range(panel.x)
+        return self._range(panel.x, self.pad[panel.x])
 
     def y_range(self, panel: PanelSpec) -> tuple[float, float]:
-        return self._range(panel.y)
+        return self._range(panel.y, self.top_pad)
 
 
 def _present(state: PanelState, panel: PanelSpec) -> bool:
     return panel.x in state.values and panel.y in state.values
 
 
-def _unit_height(layout: PanelLayout, width: float) -> float:
-    """Height of one grid row that makes the 45-degree panel square (else rows as wide)."""
+def _aspect(ctx: _Context, layout: PanelLayout) -> float:
+    """Height over width of the 45-degree panel's data range (1 without such a panel)."""
+    reference = next((p for p in layout.panels if p.kind == DIAGONAL), None)
+    if reference is None:
+        return 1.0
+    (x0, x1), (y0, y1) = ctx.x_range(reference), ctx.y_range(reference)
+    return (y1 - y0) / (x1 - x0)
+
+
+def _unit_height(
+    layout: PanelLayout,
+    width: float,
+    column_gap: float,
+    row_gap: float,
+    outer: float,
+    aspect: float,
+) -> float:
+    """Height of one grid row that gives the 45-degree line exactly 45 degrees.
+
+    ``aspect`` is the height of that panel's data range over its width.
+    """
     reference = next((p for p in layout.panels if p.kind == DIAGONAL), None)
     if reference is None:
         return width
 
-    def span(units: int) -> float:
-        return units + GRID_GAP * (units - 1)
+    def extent(units: int, gap: float) -> float:
+        return units + gap * (units - 1)
 
     cols, rows = layout.cols, layout.rows
-    cell_width = width * cols / span(cols)
-    row_height = cell_width * span(reference.cols) / span(reference.rows)
-    return row_height * span(rows) / rows
+    inner = 1 - 2 * outer
+    cell_width = width * cols * inner / extent(cols, column_gap)
+    panel_width = cell_width * extent(reference.cols, column_gap)
+    cell_height = aspect * panel_width / extent(reference.rows, row_gap)
+    return cell_height * extent(rows, row_gap) / inner / rows
+
+
+def _panel_renderer() -> Any:
+    """The matplotlib renderer with the row, column and outer gaps of a ``PanelGrid``.
+
+    Imported here because the renderer module needs the text engine, which static
+    figures built without it must not require until they are saved.
+    """
+    from mosaickit.rendering.matplotlib.renderer import MatplotlibRenderer
+
+    class PanelRenderer(MatplotlibRenderer):
+        def render_grid(self, grid: Any, cache: Any) -> Any:
+            result = super().render_grid(grid, cache)
+            result.figure.subplots_adjust(
+                left=grid.outer,
+                right=1 - grid.outer,
+                bottom=grid.outer,
+                top=1 - grid.outer,
+                wspace=grid.column_gap,
+                hspace=grid.row_gap,
+            )
+            return result
+
+    return PanelRenderer()
+
+
+class PanelGrid(CanvasGrid):
+    """A ``CanvasGrid`` drawn with its own gaps between rows and columns (shares of a cell)."""
+
+    def __init__(
+        self, *args: Any, column_gap: float, row_gap: float, outer: float, **kwargs: Any
+    ) -> None:
+        super().__init__(*args, **kwargs)
+        self.column_gap, self.row_gap, self.outer = column_gap, row_gap, outer
+
+    def _renderer(self, renderer: Any = None) -> Any:
+        return _panel_renderer() if renderer is None else super()._renderer(renderer)
 
 
 def _text_layer(
@@ -151,12 +234,13 @@ def _text_layer(
             offset=(0, -TICK_OFFSET),
             math=True,
         )
+    anchor = {"center": "right", "left": "top-right", "right": "bottom-right"}[lean]
     return TextLayer(
         position,
         text,
         id=layer_id,
         role="macro.mark",
-        anchor="right",
+        anchor=anchor,
         offset=(-TICK_OFFSET, 0),
         math=True,
     )
@@ -316,34 +400,108 @@ def _cleared(
     return (point[0], -gap * ctx.lengths[panel.y])
 
 
+def _tick_box(
+    layer: Layer,
+    scale: tuple[float, float],
+    origin: tuple[float, float],
+    size: float,
+    o: PlacementOptions,
+) -> Box:
+    """The estimated box in points of a tick label (a ``TextLayer`` of ``_text_layer``)."""
+    assert isinstance(layer, TextLayer)
+    w, h = text_box(str(layer.text), size, o)
+    x = (layer.position[0] - origin[0]) * scale[0] + layer.offset[0]
+    y = (layer.position[1] - origin[1]) * scale[1] + layer.offset[1]
+    horizontal, _, vertical = layer.anchor.partition("-")[::-1] if False else (None, None, None)
+    del horizontal, vertical
+    names = layer.anchor
+    left = "left" in names
+    right = "right" in names
+    top = "top" in names
+    bottom = "bottom" in names
+    x0 = x if left else x - w if right else x - w / 2
+    y0 = y - h if top else y if bottom else y - h / 2
+    return (x0, y0, x0 + w, y0 + h)
+
+
+def _axes_size_pt(
+    layout: PanelLayout,
+    panel: PanelSpec,
+    width: float,
+    height: float,
+    column_gap: float,
+    row_gap: float,
+    outer: float,
+) -> tuple[float, float]:
+    """Width and height in points of the axes of ``panel`` once the grid is drawn."""
+    inner = 1 - 2 * outer
+
+    def extent(units: int, gap: float) -> float:
+        return units + gap * (units - 1)
+
+    w = (
+        width
+        * layout.cols
+        * inner
+        * extent(panel.cols, column_gap)
+        / extent(layout.cols, column_gap)
+    )
+    h = height * layout.rows * inner * extent(panel.rows, row_gap) / extent(layout.rows, row_gap)
+    return (w * POINTS_PER_INCH, h * POINTS_PER_INCH)
+
+
 def _panel_canvas(
     ctx: _Context,
     panel: PanelSpec,
     curves: Sequence[CurveSpec],
-    arrows: Sequence[Layer],
+    arrows: Sequence[ShiftArrow],
     ticks: Sequence[Layer],
     pieces: Sequence[tuple[tuple[float, float], tuple[float, float]]],
     title: str | None,
     steps: Collection[str],
     width: float,
     height: float,
+    size_pt: tuple[float, float],
+    placement: PlacementOptions,
 ) -> Canvas:
     x_range, y_range = ctx.x_range(panel), ctx.y_range(panel)
     spec = canvas_spec(
         x_range, y_range, width=panel.cols * width, height=panel.rows * height, title=title
     )
     canvas = new_canvas(spec)
+    lx, ly = ctx.lengths[panel.x], ctx.lengths[panel.y]
     canvas.extend(
         axes_layers(
-            (0.0, ctx.lengths[panel.x]),
-            (0.0, ctx.lengths[panel.y]),
+            (0.0, lx),
+            (0.0, ly),
             x_label=f"${ctx.symbol(panel.x)}$",
             y_label=f"${ctx.symbol(panel.y)}$",
             origin_label=ctx.labels("axis.origin"),
         )
     )
+    options = active_config().settings.options
+    text_size = options.label_size * options.text_scale
+    small_size = options.annotation_size * options.text_scale
+    scale = (size_pt[0] / (x_range[1] - x_range[0]), size_pt[1] / (y_range[1] - y_range[0]))
+    origin = (x_range[0], y_range[0])
+
+    def pt(point: tuple[float, float]) -> tuple[float, float]:
+        return ((point[0] - origin[0]) * scale[0], (point[1] - origin[1]) * scale[1])
+
+    scene = Scene(limits=(0.0, 0.0, size_pt[0], size_pt[1]), dot_radius=options.point_size**0.5)
+    scene.add_polyline([pt((0.0, 0.0)), pt((lx, 0.0))])
+    scene.add_polyline([pt((0.0, 0.0)), pt((0.0, ly))])
+    for corner, anchor_box in (
+        (pt((lx, 0.0)), "x"),
+        (pt((0.0, ly)), "y"),
+    ):
+        w, h = text_box("W", text_size, placement)
+        if anchor_box == "x":
+            scene.boxes.append((corner[0], corner[1] - h / 2, corner[0] + 2 * w, corner[1] + h / 2))
+        else:
+            scene.boxes.append((corner[0] - w, corner[1], corner[0] + w, corner[1] + 2 * h))
     if panel.kind == DIAGONAL:
-        tip = DIAGONAL_REACH * min(ctx.lengths[panel.x], ctx.lengths[panel.y])
+        tip = DIAGONAL_REACH * min(lx, ly)
         canvas.add(
             PathLayer(
                 ((0.0, 0.0), (tip, tip)),
@@ -364,6 +522,60 @@ def _panel_canvas(
                 offset=(3, 2),
             )
         )
+        scene.add_polyline([pt((0.0, 0.0)), pt((tip, tip))])
+        w, h = text_box("45", small_size, placement)
+        top = pt((tip, tip))
+        scene.boxes.append((top[0], top[1], top[0] + w + 6, top[1] + h + 2))
+    for piece in pieces:
+        scene.add_polyline([pt(piece[0]), pt(piece[1])])
+    for arrow in arrows:
+        scene.add_polyline([pt(point) for point in arrow.points])
+    for tick in ticks:
+        scene.boxes.append(_tick_box(tick, scale, origin, small_size, placement))
+    for curve in curves:
+        scene.add_polyline([pt(point) for point in curve.points])
+    dots: list[tuple[str, tuple[float, float]]] = []
+    if panel.points:
+        seen: set[tuple[float, float]] = set()
+        for state in ctx.states:
+            if state.label not in steps or not _present(state, panel):
+                continue
+            location = (state.values[panel.x], state.values[panel.y])
+            key = (round(location[0], KEY_DIGITS), round(location[1], KEY_DIGITS))
+            if key in seen:
+                continue
+            seen.add(key)
+            dots.append((state.label, location))
+            scene.dots.append(pt(location))
+
+    def put(
+        layer_id: str, role: str, text: str, placed: Placed, size: float, *, at_leader: bool = True
+    ) -> None:
+        scene.boxes.append(placed.box)
+        position = (
+            placed.position[0] / scale[0] + origin[0],
+            placed.position[1] / scale[1] + origin[1],
+        )
+        canvas.add(
+            TextLayer(
+                position, text, id=layer_id, role=role, anchor=placed.anchor, math=True, z_index=7
+            )
+        )
+        if placed.leader is not None and at_leader:
+            start, end = placed.leader
+            canvas.add(
+                PathLayer(
+                    tuple(
+                        (v[0] / scale[0] + origin[0], v[1] / scale[1] + origin[1])
+                        for v in (start, end)
+                    ),
+                    id=f"{layer_id}.leader",
+                    role="macro.link.leader",
+                    clip=False,
+                    z_index=6,
+                )
+            )
+
     counts: dict[str, int] = {}
     for curve in curves:
         number = counts.get(curve.family, 0)
@@ -371,16 +583,25 @@ def _panel_canvas(
         base = f"macro.panels.{panel.key}.{curve.family}.{number}"
         role = "macro.curve.panel" if curve.main else "macro.curve.panel.shifted"
         canvas.add(PathLayer(curve.points, id=base, role=role, z_index=2))
+    for curve in curves:
+        number = [c for c in curves if c.family == curve.family].index(curve)
+        base = f"macro.panels.{panel.key}.{curve.family}.{number}"
+        role = "macro.curve.panel" if curve.main else "macro.curve.panel.shifted"
         fields = {name: ctx.subscripted(value) for name, value in curve.fields.items()}
-        from mosaickit import PointLabelLayer
-
+        label = ctx.labels(curve.label_id, **fields)
+        size = text_box(label, text_size, placement)
+        anchor = pt(curve.end)
+        placed = place(anchor, size, scene, placement, CURVE_ORDER)
+        put(f"{base}.label", role, label, placed, text_size)
+    for number, arrow in enumerate(arrows):
         canvas.add(
-            PointLabelLayer(
-                curve.end,
-                ctx.labels(curve.label_id, **fields),
-                id=f"{base}.label",
-                role=role,
-                z_index=7,
+            PathLayer(
+                arrow.points,
+                id=f"macro.panels.{panel.key}.shift.{number}",
+                role="macro.shift",
+                stroke=ARROW,
+                arrow_placement=ArrowPlacement.END,
+                z_index=5,
             )
         )
     for number, (start, end) in enumerate(pieces):
@@ -393,25 +614,13 @@ def _panel_canvas(
                 z_index=1,
             )
         )
-    canvas.extend(arrows)
     canvas.extend(ticks)
-    if panel.points:
-        seen: set[tuple[float, float]] = set()
-        for state in ctx.states:
-            if state.label not in steps or not _present(state, panel):
-                continue
-            location = (state.values[panel.x], state.values[panel.y])
-            key = (round(location[0], KEY_DIGITS), round(location[1], KEY_DIGITS))
-            if key in seen:
-                continue
-            seen.add(key)
-            canvas.extend(
-                marked_point(
-                    location,
-                    f"${state.label}$",
-                    layer_id=f"macro.panels.{panel.key}.point.{state.label}",
-                )
-            )
+    for label, location in dots:
+        layer_id = f"macro.panels.{panel.key}.point.{label}"
+        canvas.add(MarkerLayer((location,), id=layer_id, role="macro.point", z_index=6))
+        size = text_box(label, text_size, placement)
+        placed = place(pt(location), size, scene, placement, POINT_ORDER, ignore=(pt(location),))
+        put(f"{layer_id}.label", "macro.point", f"${label}$", placed, text_size)
     return canvas
 
 
@@ -434,8 +643,13 @@ def linked_panels_canvas(
     ranges: Mapping[str, float] | None = None,
     pad: Mapping[str, float] | None = None,
     margin: float = MARGIN,
+    top_pad: float = TOP_PAD,
     samples: int = DEFAULT_SAMPLES,
     label_gap: float = LABEL_GAP,
+    column_gap: float = COLUMN_GAP,
+    row_gap: float = ROW_GAP,
+    outer: float = OUTER_MARGIN,
+    placement: PlacementOptions | None = None,
     width: float = PANEL_WIDTH,
 ) -> CanvasGrid:
     """Draw ``scenario`` on ``layout``: curves, points, ticks, shift arrows and projections.
@@ -447,9 +661,16 @@ def linked_panels_canvas(
     ``steps`` limits which steps are marked and projected (default all); ``projections``
     limits which projections are drawn, by name; ``hide_ticks`` is a collection of
     ``(variable, step label)`` pairs whose tick label is left out; ``ranges`` fixes the axis
-    length of a variable; ``pad`` the room right of each axis for curve names (share of its
-    length); ``margin`` the room under and left of the axes for tick labels; ``label_gap`` how
-    far dashed paths stop short of a tick label. ``title`` is drawn above the top-left panel;
+    length of a variable.
+
+    ``pad`` is the room right of each horizontal axis for curve names and ``top_pad`` the room
+    above each vertical axis (shares of the axis length); ``margin`` the room under and left of
+    the axes for tick labels; ``label_gap`` how far dashed paths stop short of a tick label;
+    ``column_gap`` and ``row_gap`` the space between grid columns and rows (shares of a cell);
+    ``outer`` the margin around the figure (a share of its size); ``placement`` the distances
+    and text-size estimate used to place labels.
+
+    ``title`` is drawn above the top-left panel;
     ``None`` draws none.
     """
     text = Labels(labels)
@@ -460,13 +681,13 @@ def linked_panels_canvas(
         raise ValidationError(f"unknown steps: {unknown}")
     lengths = axis_lengths(states, extent=extent, overrides=ranges, natural=lras)
     full_pad = {**DEFAULT_PAD, **(pad or {})}
-    ctx = _Context(layout, states, lengths.lengths, full_pad, text, margin)
+    ctx = _Context(layout, states, lengths.lengths, full_pad, text, margin, top_pad)
     options = CurveOptions(
         mode=mode, samples=samples, sras=sras, shifted_sras=shifted_sras, lras=lras, ad=ad
     )
     arrow_options = shift_arrows_on if isinstance(shift_arrows_on, ArrowOptions) else ArrowOptions()
     ticks, drawn = _ticks(ctx, hide_ticks)
-    height = _unit_height(layout, width)
+    height = _unit_height(layout, width, column_gap, row_gap, outer, _aspect(ctx, layout))
     placed = sorted(layout.panels, key=lambda panel: (panel.row, panel.col))
     pieces: dict[str, list[tuple[tuple[float, float], tuple[float, float]]]] = {
         panel.key: [] for panel in layout.panels
@@ -482,21 +703,11 @@ def linked_panels_canvas(
     canvases: dict[str, Canvas] = {}
     for index, panel in enumerate(placed):
         curves = curve_specs(panel, scenario, states, lengths, options)
-        arrows: list[Layer] = []
-        if shift_arrows_on is not False:
-            for number, arrow in enumerate(
-                shift_arrows(panel, curves, states, dict(lengths.lengths), arrow_options)
-            ):
-                arrows.append(
-                    PathLayer(
-                        arrow.points,
-                        id=f"macro.panels.{panel.key}.shift.{number}",
-                        role="macro.shift",
-                        stroke=ARROW,
-                        arrow_placement=ArrowPlacement.END,
-                        z_index=5,
-                    )
-                )
+        arrows = (
+            shift_arrows(panel, curves, states, dict(lengths.lengths), arrow_options)
+            if shift_arrows_on is not False
+            else []
+        )
         canvases[panel.key] = _panel_canvas(
             ctx,
             panel,
@@ -508,6 +719,8 @@ def linked_panels_canvas(
             shown,
             width,
             height,
+            _axes_size_pt(layout, panel, width, height, column_gap, row_gap, outer),
+            placement or PlacementOptions(),
         )
     matrix: list[list[Span | None]] = [[None] * layout.cols for _ in range(layout.rows)]
     occupied: set[tuple[int, int]] = set()
@@ -525,7 +738,15 @@ def linked_panels_canvas(
         GridLink(cell[first], start, cell[second], end, role="macro.link")
         for first, start, second, end in crossings
     ]
-    return CanvasGrid(rows, rows=layout.rows, cols=layout.cols, links=links)
+    return PanelGrid(
+        rows,
+        rows=layout.rows,
+        cols=layout.cols,
+        links=links,
+        column_gap=column_gap,
+        row_gap=row_gap,
+        outer=outer,
+    )
 
 
 def four_panel_canvas(scenario: Scenario, **options: object) -> CanvasGrid:

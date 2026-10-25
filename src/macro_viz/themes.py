@@ -137,6 +137,7 @@ def build_theme(options: ThemeOptions) -> Theme:
             "macro.link": StyleBundle(
                 stroke=Stroke(color=o.axis, width=o.link_width, dash=DashStyle.DASHED)
             ),
+            "macro.link.leader": StyleBundle(stroke=Stroke(color=o.axis, width=o.link_width)),
             "macro.diagonal": StyleBundle(stroke=Stroke(color=o.axis, width=o.diagonal_width)),
             "macro.shift": StyleBundle(stroke=Stroke(color=o.axis, width=o.arrow_width)),
         }
