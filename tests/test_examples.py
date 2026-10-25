@@ -22,6 +22,8 @@ def test_keynesian_examples_write_nonempty_images(tmp_path: Path) -> None:
     run("keynesian_animation.py", "--output", str(tmp_path))
     run("money.py", "--output", str(tmp_path))
     run("money_animation.py", "--output", str(tmp_path))
+    run("adas.py", "--output", str(tmp_path))
+    run("adas_animation.py", "--output", str(tmp_path))
 
     images = {image.stem: image for image in tmp_path.glob("*.svg")}
     assert {
@@ -33,6 +35,14 @@ def test_keynesian_examples_write_nonempty_images(tmp_path: Path) -> None:
         "money_market",
         "money_income_shift",
         "money_supply_shift",
+        "aggregate_supply",
+        "aggregate_supply_shift",
+        "aggregate_demand_shifts",
+        "adas_equilibrium",
+        "adas_employment",
+        "adas_productivity",
+        "adas_demand_shock",
+        "adas_animation",
     } <= set(images)
     assert all(image.stat().st_size > 0 for image in images.values())
 

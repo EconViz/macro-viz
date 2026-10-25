@@ -34,3 +34,26 @@ frames = 6
 step_seconds = 0.6
 fps = 10
 dpi = 100
+
+[adas]
+expected_price = 1.0
+natural_output = 100
+supply_slope = 0.6
+autonomous = 80
+money = 45
+multiplier = 1
+expected_price_after = 1.2
+autonomous_after = 100
+money_after = 30
+productivity_scale = 0.75
+productivity = 1.0
+demand_x_max = 240
+demand_y_max = 2.2
+caption_government = "Increase in government spending"
+caption_money = "Decrease in nominal money"
+
+[adas_animation]
+frames = 6
+step_seconds = 0.6
+fps = 10
+dpi = 100
