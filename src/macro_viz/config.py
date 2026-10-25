@@ -72,6 +72,8 @@ _STROKES = {
     "line45": "line45_width",
     "arrow": "arrow_width",
     "guide": "guide_width",
+    "link": "link_width",
+    "diagonal": "diagonal_width",
 }
 
 _Colors = make_dataclass(
@@ -221,6 +223,8 @@ SCHEMA = econ_toml.register(
             "stroke.line45": "45-degree line width in points (default 0.8)",
             "stroke.arrow": "movement arrow width in points (default 1.0)",
             "stroke.guide": "guide width in points (default 1.0)",
+            "stroke.link": "dashed projection link width in points (default 0.7)",
+            "stroke.diagonal": "45-degree line width in points (default 0.6)",
             "marker.point": "equilibrium dot diameter in points (default 6.5)",
             "text.scale": "multiplies every text size (default 1.0)",
             **{
