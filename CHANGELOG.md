@@ -13,6 +13,8 @@ All notable changes to `macro-viz` will be documented in this file.
 
 ### Added
 
+- `save_gif` animates builders that return a grid of panels; `examples/scripts/panels_animation.py`
+  reveals the steps A, B, C of the capital and money-illusion scenarios one after another.
 - Initial installable package scaffold and development checks.
 - A registered `[macro.*]` MosaicKit configuration schema: `palette`, `language`, `color.*`,
   `stroke.curve`, `stroke.shifted`, `stroke.arrow`, `stroke.guide`, `marker.point`, `text.scale`,

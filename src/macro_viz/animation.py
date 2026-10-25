@@ -24,6 +24,7 @@ from mosaickit import (
     ArrowLayer,
     AxisMarkLayer,
     Canvas,
+    CanvasGrid,
     FillLayer,
     Layer,
     MarkerLayer,
@@ -40,7 +41,7 @@ from macro_viz.errors import ValidationError
 if TYPE_CHECKING:  # pragma: no cover
     from kinetickit.scene.node import Node
 
-Builder = Callable[[float], Canvas]
+Builder = Callable[[float], Canvas | CanvasGrid]
 """A function from a parameter value to the canvas drawing the figure at that value."""
 
 DEFAULT_FPS = 12
@@ -90,7 +91,7 @@ def linear_values(start: float, stop: float, frames: int) -> tuple[float, ...]:
     return tuple(start + k * step for k in range(frames))
 
 
-def frames(builder: Builder, values: Sequence[float]) -> list[Canvas]:
+def frames(builder: Builder, values: Sequence[float]) -> list[Any]:
     """The canvas of ``builder`` at each of ``values``."""
     if not values:
         raise ValidationError("an animation needs at least one value")
@@ -120,11 +121,16 @@ def _png_frames(builder: Builder, values: Sequence[float], dpi: int, stem: str) 
     with tempfile.TemporaryDirectory(prefix="macro-viz-animation-") as directory:
         images: list[Image.Image] = []
         for index, canvas in enumerate(frames(builder, values)):
-            canvas.spec = canvas.spec.replace(dpi=dpi)
+            options: dict[str, Any] = {"transparent": False}
+            if hasattr(canvas, "spec"):
+                canvas.spec = canvas.spec.replace(dpi=dpi)
+            else:  # a grid renders at the highest resolution of its cells
+                for placement in canvas.placements:
+                    placement.canvas.spec = placement.canvas.spec.replace(dpi=dpi)
             # Named after the animation, so per-figure label overrides reach every frame.
             target = Path(directory) / f"{index:06d}" / f"{stem}.png"
             target.parent.mkdir(parents=True, exist_ok=True)
-            canvas.save(target, transparent=False)
+            canvas.save(target, **options)
             with Image.open(target) as opened:
                 images.append(opened.convert("RGB"))
         width = max(image.width for image in images)
@@ -543,7 +549,9 @@ def save_svg(
     from kinetickit.animation import Animation
     from kinetickit.geometry.two_d import Bounds2D, Vec2
 
-    canvases = frames(builder, values)
+    canvases = [canvas for canvas in frames(builder, values) if isinstance(canvas, Canvas)]
+    if len(canvases) != len(values):
+        raise ValidationError("an animated SVG needs single canvases; use save_gif for panels")
     geometry = _geometry(canvases[0], margin)
     typography = _Typography()
     layer_sets = [list(canvas.snapshot().layers) for canvas in canvases]
