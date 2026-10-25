@@ -56,7 +56,8 @@ def test_oil_shock_is_stagflation_then_output_recovers() -> None:
     assert path.steps[1].equilibrium.price > path.steps[0].equilibrium.price
     # a lasting cost increase lowers the natural level of output
     assert path.medium_run.output < 100
-    assert path.medium_run.output == pytest.approx(path.steps[1].model.supply.effective_natural_output)
+    impact = path.steps[1].model.supply
+    assert path.medium_run.output == pytest.approx(impact.effective_natural_output)
 
 
 def test_invalid_rounds_are_rejected() -> None:
