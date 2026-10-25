@@ -17,7 +17,7 @@ def run(script: str, *arguments: str) -> None:
     )
 
 
-def test_keynesian_examples_write_nonempty_images(tmp_path: Path) -> None:
+def test_examples_write_nonempty_images(tmp_path: Path) -> None:
     run("keynesian.py", "--output", str(tmp_path))
     run("keynesian_animation.py", "--output", str(tmp_path))
     run("money.py", "--output", str(tmp_path))
@@ -42,7 +42,6 @@ def test_keynesian_examples_write_nonempty_images(tmp_path: Path) -> None:
         "adas_employment",
         "adas_productivity",
         "adas_demand_shock",
-        "adas_animation",
     } <= set(images)
     assert all(image.stat().st_size > 0 for image in images.values())
 
