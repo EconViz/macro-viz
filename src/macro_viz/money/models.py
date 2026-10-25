@@ -43,12 +43,16 @@ class MoneyDemand:
     """``Md = nominal_income * L(i)`` with ``L`` positive and decreasing in the rate.
 
     ``liquidity`` is ``L``; ``rate_max`` is the highest interest rate the model considers (the
-    top of the vertical axis, and the upper bound of the search for the equilibrium rate).
+    top of the vertical axis, and the upper bound of the search for the equilibrium rate). With
+    ``zero_bound`` the interest rate cannot fall below zero: when the money supply exceeds the
+    demand at a zero rate, people hold the extra money at no cost (a liquidity trap) and the
+    rate stays at zero.
     """
 
     nominal_income: float
     liquidity: Callable[[float], float]
     rate_max: float
+    zero_bound: bool = False
 
     def __post_init__(self) -> None:
         income = _finite("nominal income", self.nominal_income)
@@ -71,6 +75,8 @@ class MoneyDemand:
     def rate(self, money: float, tolerance: float = DEFAULT_TOLERANCE) -> float:
         """The interest rate at which the quantity demanded equals ``money`` (bisection)."""
         low, high = 0.0, self.rate_max
+        if self.zero_bound and money >= self.quantity(0.0):
+            return 0.0
         if not self.quantity(high) <= money <= self.quantity(low):
             raise ValidationError(
                 "money supply must lie between the demand at the highest and at a zero rate"
@@ -84,7 +90,7 @@ class MoneyDemand:
         return (low + high) / 2
 
     def with_nominal_income(self, nominal_income: float) -> MoneyDemand:
-        return MoneyDemand(nominal_income, self.liquidity, self.rate_max)
+        return MoneyDemand(nominal_income, self.liquidity, self.rate_max, self.zero_bound)
 
 
 @dataclass(frozen=True, slots=True)

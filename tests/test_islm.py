@@ -79,7 +79,7 @@ def test_invalid_parameters_are_rejected(field: str) -> None:
     }
     values[field] = 0
     with pytest.raises(ValidationError):
-        ISLM(**values)
+        ISLM(**values)  # type: ignore[arg-type]
     with pytest.raises(ValidationError):
         ISLM(100, 25, 20, 0.5, -1)
 

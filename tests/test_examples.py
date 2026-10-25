@@ -29,6 +29,7 @@ def test_examples_write_nonempty_images(tmp_path: Path) -> None:
     run("growth.py", "--output", str(tmp_path))
     run("growth_animation.py", "--output", str(tmp_path))
     run("wsps.py", "--output", str(tmp_path))
+    run("liquidity_trap.py", "--output", str(tmp_path))
 
     images = {image.stem: image for image in tmp_path.glob("*.svg")}
     assert {
@@ -49,6 +50,8 @@ def test_examples_write_nonempty_images(tmp_path: Path) -> None:
         "adas_demand_shock",
         "islm",
         "wsps",
+        "money_zero_bound",
+        "islm_zero_bound",
         "wsps_employment",
         "solow",
         "golden_rule",

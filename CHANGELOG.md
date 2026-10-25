@@ -33,6 +33,7 @@ All notable changes to `macro-viz` will be documented in this file.
 - `macro_viz.islm`: linear IS-LM, fiscal and monetary policy with crowding out, and `islm_canvas`.
 - `macro_viz.growth`: Solow model (steady state, golden rule, transition paths) and its figures.
 - `macro_viz.labor`: wage-setting and price-setting natural rate with shifts, and `wsps_canvas`.
+- Zero lower bound for the money market and IS-LM (liquidity trap) with flat money demand and LM.
 - A theory-diagram kit (arrowed axes, direct curve labels, dotted guides, dashed old positions) in
   the manual style.
 - `macro_viz.animation` and the `macro-viz[animation]` extra: GIF and native animated SVG from any

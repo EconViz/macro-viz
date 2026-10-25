@@ -47,6 +47,7 @@ class ISLM:
     income_demand: float
     rate_demand: float
     multiplier: float = 1.0
+    zero_bound: bool = False
 
     def __post_init__(self) -> None:
         for name in ("autonomous", "real_money"):
@@ -76,12 +77,21 @@ class ISLM:
         return (self.real_money + self.rate_demand * rate) / self.income_demand
 
     def equilibrium(self) -> ISLMEquilibrium:
-        """Solve ``IS`` and ``LM`` for ``(Y, R)``."""
+        """Solve ``IS`` and ``LM`` for ``(Y, R)``.
+
+        With ``zero_bound`` the LM curve is flat at ``R = 0`` up to the output ``m / d`` where
+        money demand reaches zero interest; an IS curve crossing the flat part gives ``R = 0``.
+        """
         m, k, b = self.multiplier, self.income_demand, self.sensitivity
         # Y = m (a - b R) and k Y = real_money + h R
         denominator = k * m * b + self.rate_demand
         rate = (k * m * self.autonomous - self.real_money) / denominator
+        if self.zero_bound and rate < 0:
+            return ISLMEquilibrium(self.is_output(0.0), 0.0)
         return ISLMEquilibrium(self.is_output(rate), rate)
+
+    def with_zero_bound(self, zero_bound: bool = True) -> ISLM:
+        return replace(self, zero_bound=zero_bound)
 
     def with_autonomous(self, autonomous: float) -> ISLM:
         return replace(self, autonomous=autonomous)
