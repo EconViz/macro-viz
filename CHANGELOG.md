@@ -21,6 +21,8 @@ All notable changes to `macro-viz` will be documented in this file.
 - `macro_viz.adas`: aggregate supply and demand, short-run equilibrium with gap classification, demand
   and supply shocks, and the figures `adas_canvas`, `aggregate_supply_canvas`, and
   `aggregate_demand_canvas`.
+- `analyze_adjustment` and `adas_adjustment_canvas`: medium-run AS-AD adjustment paths (expectations,
+  money expansion, deficit reduction, oil shock).
 - A theory-diagram kit (arrowed axes, direct curve labels, dotted guides, dashed old positions) in
   the manual style.
 - `macro_viz.animation` and the `macro-viz[animation]` extra: GIF and native animated SVG from any

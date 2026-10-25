@@ -57,3 +57,13 @@ frames = 6
 step_seconds = 0.6
 fps = 10
 dpi = 100
+
+[adjustment]
+rounds_expectations = 1
+money_after = 70
+autonomous_after_deficit = 35
+cost_scale = 1.12
+frames = 6
+step_seconds = 0.6
+fps = 10
+dpi = 100
