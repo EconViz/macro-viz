@@ -49,6 +49,17 @@ draws the market (and, given a shift, the old position heavy, the new one thin a
 A', and an arrow); `money_demand_canvas` shows the demand curve before and after a change in
 nominal income at one interest rate.
 
+## Aggregate supply and demand
+
+`macro_viz.adas` holds `AggregateSupply` (`P = scale * Pe * h(Y)` with `h(Yn) = 1`; `linear(...)`
+or any increasing `h`), `AggregateDemand` (`Y = A + k * M / P`), `ASADModel` whose `equilibrium()`
+returns output, price level, and the gap against natural output (recessionary, inflationary, or
+none), `analyze_demand_shock` and `analyze_supply_shock` with direction metadata, and
+`employment(Y, A)`. Natural output is an input; the wage-setting derivation is a separate model.
+`adas_canvas` draws the crossing, the natural-output marker, and optionally a shock, a productivity
+note, or the unknown direction of a demand shift; `aggregate_supply_canvas` and
+`aggregate_demand_canvas` draw one curve and its shifts.
+
 ## Animation
 
 A figure about a shift or an adjustment animates from the same builder. `pip install

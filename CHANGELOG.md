@@ -18,6 +18,9 @@ All notable changes to `macro-viz` will be documented in this file.
   `consumption_function_canvas`, `keynesian_cross_canvas`, and `multiplier_canvas`.
 - `macro_viz.money`: money demand and supply, the equilibrium interest rate, and comparative statics
   for nominal income and the money supply, with `money_market_canvas` and `money_demand_canvas`.
+- `macro_viz.adas`: aggregate supply and demand, short-run equilibrium with gap classification, demand
+  and supply shocks, and the figures `adas_canvas`, `aggregate_supply_canvas`, and
+  `aggregate_demand_canvas`.
 - A theory-diagram kit (arrowed axes, direct curve labels, dotted guides, dashed old positions) in
   the manual style.
 - `macro_viz.animation` and the `macro-viz[animation]` extra: GIF and native animated SVG from any
