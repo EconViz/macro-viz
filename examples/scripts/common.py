@@ -114,10 +114,3 @@ def load_example(data: Path, name: str) -> dict[str, Any]:
     """The table called ``name`` of the sample data file."""
     table: dict[str, Any] = tomllib.loads(data.read_text("utf-8"))[name]
     return table
-
-
-def clear_images(output: Path) -> None:
-    """Remove images written by an earlier run."""
-    for image in output.glob("*"):
-        if image.suffix in IMAGE_SUFFIXES:
-            image.unlink()

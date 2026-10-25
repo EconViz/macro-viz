@@ -1,14 +1,11 @@
 from __future__ import annotations
 
 from collections.abc import Iterator
-from datetime import date
 
 import pytest
 
-from macro_viz import Config, TimeSeries, ValidationError
-from macro_viz.accounts import calculate_inflation
-from macro_viz.i18n import LANGUAGES, label_table, text, validate_language
-from macro_viz.visuals import gdp_decomposition_canvas  # noqa: F401
+from macro_viz import Config, ValidationError
+from macro_viz.i18n import LANGUAGES, Labels, label_ids, label_table, text, validate_language
 
 
 @pytest.fixture(autouse=True)
@@ -22,29 +19,35 @@ def test_every_language_has_the_same_label_ids() -> None:
 
     assert all(set(label_table(language)) == reference for language in LANGUAGES)
     assert all(label_table(language)[key] for language in LANGUAGES for key in reference)
+    assert set(label_ids()) == reference
 
 
-def test_text_fills_placeholders_and_rejects_unknown_ids() -> None:
-    assert text("series.trend_of", language="en", name="GDP") == "GDP trend"
-    assert text("series.trend_of", language="zh-TW", name="GDP") == "GDP趨勢"
+def test_text_looks_up_ids_per_language_and_rejects_unknown_ones() -> None:
+    assert text("keynesian.curve.production", language="en") == "Production"
+    assert text("keynesian.curve.production", language="zh-TW") == "生產"
+    assert text("keynesian.curve.production", language="zh-CN") == "生产"
     with pytest.raises(ValidationError):
         text("no.such.id", language="en")
     with pytest.raises(ValidationError):
         validate_language("fr")
 
 
-def test_the_configured_language_names_derived_series() -> None:
-    dates = (date(2023, 1, 1), date(2024, 1, 1))
-    from macro_viz import IndexBase
+def test_math_labels_keep_their_braces_without_fields() -> None:
+    assert Labels({"keynesian.mark.shift": "$\\bar{A}$"})("keynesian.mark.shift") == "$\\bar{A}$"
 
-    cpi = TimeSeries("CPI", dates, (100.0, 103.0), "index", IndexBase(dates[0]))
 
-    english = calculate_inflation(cpi)
+def test_the_configured_language_selects_the_text() -> None:
+    english = Labels()("keynesian.mark.autonomous")
     Config.from_dict({"macro": {"language": "zh-TW"}}).use()
-    chinese = calculate_inflation(cpi)
-    named = calculate_inflation(cpi, name="Own name")
+    chinese = Labels()("keynesian.mark.autonomous")
+    explicit = Labels(language="en")("keynesian.mark.autonomous")
 
-    assert english.inflation_rate.name == "CPI inflation"
-    assert chinese.inflation_rate.name == "CPI通貨膨脹率"
-    assert chinese.inflation_rate.unit == "百分比"
-    assert named.inflation_rate.name == "Own name"
+    assert english == "Autonomous spending"
+    assert chinese == "自發性支出"
+    assert explicit == english
+
+
+def test_overrides_replace_text_and_unknown_ids_raise() -> None:
+    assert Labels({"keynesian.curve.production": "P"})("keynesian.curve.production") == "P"
+    with pytest.raises(ValidationError):
+        Labels({"no.such.label": "x"})

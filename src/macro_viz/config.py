@@ -65,16 +65,11 @@ _COLOR_FIELDS = (
     "primary",
     "secondary",
     "tertiary",
-    "accent",
-    "intervention",
-    "muted",
 )
 _STROKES = {
     "curve": "curve_width",
     "shifted": "shifted_width",
     "arrow": "arrow_width",
-    "series": "line_width",
-    "secondary": "secondary_width",
     "guide": "guide_width",
 }
 
@@ -98,7 +93,6 @@ _Sizes = make_dataclass(
     "_Sizes",
     [
         *((option, "float | None", field(default=None)) for option in _STROKES.values()),
-        ("marker_size", "float | None", field(default=None)),
         ("point_diameter", "float | None", field(default=None)),
         ("text_scale", "float | None", field(default=None)),
     ],
@@ -174,8 +168,6 @@ def _finish(draft: _Draft, ctx: econ_toml.Context) -> Settings:
         for option in (*_STROKES.values(), "text_scale")
         if (value := getattr(draft.sizes, option)) is not None
     }
-    if draft.sizes.marker_size is not None:
-        sizes["marker_size"] = draft.sizes.marker_size**2
     if draft.sizes.point_diameter is not None:
         sizes["point_size"] = draft.sizes.point_diameter**2
     options = replace(options, **colors, **sizes)
@@ -202,7 +194,6 @@ SCHEMA = econ_toml.register(
                 f"stroke.{name}": econ_toml.positive(f"sizes.{option}")
                 for name, option in _STROKES.items()
             },
-            "marker.turning_point": econ_toml.positive("sizes.marker_size"),
             "marker.point": econ_toml.positive("sizes.point_diameter"),
             "text.scale": econ_toml.positive("sizes.text_scale"),
             **{
@@ -227,10 +218,7 @@ SCHEMA = econ_toml.register(
             "stroke.curve": "theory curve width in points (default 3.5)",
             "stroke.shifted": "old, shifted-from curve width in points (default 1.0)",
             "stroke.arrow": "movement arrow width in points (default 1.0)",
-            "stroke.series": "primary series width in points (default 2.2)",
-            "stroke.secondary": "secondary series width in points (default 1.6)",
             "stroke.guide": "guide width in points (default 1.0)",
-            "marker.turning_point": "turning-point marker diameter in points",
             "marker.point": "equilibrium dot diameter in points (default 6.5)",
             "text.scale": "multiplies every text size (default 1.0)",
             **{

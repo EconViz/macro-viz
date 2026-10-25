@@ -2,43 +2,33 @@
 
 A figure is a list of public MosaicKit layers on a ``Canvas``. This module holds the parts
 every figure needs: the canvas that applies the label-group nudges of the configuration,
-axes with arrowheads, tick selection, and direct curve labels. It names no colour, font,
+axes with arrowheads and their titles. It names no colour, font,
 or size: those come from the theme roles of ``macro_viz.themes`` and the configuration.
 """
 
 from __future__ import annotations
 
-import math
-from collections.abc import Iterable, Mapping, Sequence
+from collections.abc import Iterable, Mapping
 from dataclasses import replace
 from typing import Any
 
 from mosaickit import (
     ArrowPlacement,
     ArrowStyle,
-    AxisMarkLayer,
     Canvas,
     CanvasSpec,
     Layer,
     PathLayer,
-    PointLabelLayer,
     Stroke,
     TextLayer,
 )
 from mosaickit.styles.nudge import Nudge
 
 from macro_viz.config import active_config
-from macro_viz.errors import ValidationError
 from macro_viz.label_groups import label_group
 
 TITLE_GAP = 6.0
 """Gap between an arrow tip and its axis title, in points."""
-
-LINE_SHARE = 1.4
-"""Height of a line of text as a multiple of its font size, for lifting a title above it."""
-
-DEFAULT_MARKS = 5
-"""How many value marks a continuous axis shows when the caller does not say."""
 
 
 class MacroCanvas(Canvas):
@@ -91,37 +81,6 @@ def canvas_spec(
         y_label="",
         title=title,
     )
-
-
-def nice_step(span: float, count: int) -> float:
-    """A 1, 2, or 5 times a power of ten that splits ``span`` into about ``count`` steps."""
-    if span <= 0 or count < 1:
-        raise ValidationError("a tick step needs a positive span and count")
-    raw = span / count
-    power = 10 ** math.floor(math.log10(raw))
-    for factor in (1, 2, 5):
-        if raw <= factor * power:
-            return float(factor * power)
-    return float(10 * power)
-
-
-def nice_bounds(low: float, high: float, count: int = DEFAULT_MARKS) -> tuple[float, float, float]:
-    """Round ``low`` and ``high`` outward to multiples of a nice step: (low, high, step)."""
-    if high < low:
-        raise ValidationError("a range needs low <= high")
-    if high == low:
-        pad = abs(high) * 0.1 or 1.0
-        low, high = low - pad, high + pad
-    step = nice_step(high - low, count)
-    return (math.floor(low / step) * step, math.ceil(high / step) * step, step)
-
-
-def tick_values(low: float, high: float, step: float) -> tuple[float, ...]:
-    """The multiples of ``step`` inside ``[low, high]``, free of floating-point noise."""
-    first = math.ceil(low / step - 1e-9)
-    last = math.floor(high / step + 1e-9)
-    digits = max(0, -math.floor(math.log10(step)) + 1)
-    return tuple(round(k * step, digits) for k in range(first, last + 1))
 
 
 def is_symbol(label: str) -> bool:
@@ -201,54 +160,3 @@ def axes_layers(
             )
         )
     return layers
-
-
-def value_marks(
-    axis: str,
-    values: Sequence[float],
-    *,
-    value_format: str,
-    id_prefix: str,
-) -> list[AxisMarkLayer]:
-    """Axis marks for ``values`` on ``axis``, labelled with ``value_format``."""
-    return [
-        AxisMarkLayer(
-            axis,
-            value,
-            value_format.format(value),
-            id=f"{id_prefix}.{index}",
-            role="axes",
-        )
-        for index, value in enumerate(values)
-    ]
-
-
-def direct_label(
-    point: tuple[float, float], text: str, *, layer_id: str, role: str
-) -> PointLabelLayer:
-    """A curve or series name placed right beside ``point``, covering nothing else."""
-    return PointLabelLayer(point, text, id=layer_id, role=role)
-
-
-def title_layer(
-    x_range: tuple[float, float],
-    y_range: tuple[float, float],
-    title: str,
-    *,
-    above_label: bool = False,
-) -> TextLayer:
-    """The figure title, centred over the axes.
-
-    With ``above_label`` it is lifted by one text line, so that it clears a word title
-    (a unit) written above the vertical axis.
-    """
-    options = active_config().settings.options
-    lift = options.label_size * options.text_scale * LINE_SHARE if above_label else 0.0
-    return TextLayer(
-        ((x_range[0] + x_range[1]) / 2, y_range[1]),
-        title,
-        id="macro.title",
-        role="title",
-        anchor="bottom",
-        offset=(0, 2 * TITLE_GAP + lift),
-    )

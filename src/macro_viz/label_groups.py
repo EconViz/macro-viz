@@ -6,9 +6,9 @@ label names:
 ``point``
     Dots: equilibrium and path points (``A``, ``A'``, ``B``).
 ``curve``
-    Curves named beside their end (``IS``, ``LM``, ``AD``, ``AS``, ``Md``, ``ZZ``, series names).
+    Curves named beside their end (``IS``, ``LM``, ``AD``, ``AS``, ``Md``, ``ZZ``).
 ``mark``
-    Values and marks on the figure (``Y*``, ``i``, price levels, peak and trough).
+    Values and marks on the figure (``Y*``, ``i``, price levels).
 ``region``
     Names inside filled regions (gaps, brackets drawn as areas).
 ``annotation``
@@ -52,9 +52,9 @@ def label_group(layer: Layer) -> str | None:
             return None
         if _under(layer.role, "macro.point"):
             return "point"
-        if _under(layer.role, "macro.curve") or _under(layer.role, "macro.series"):
+        if _under(layer.role, "macro.curve"):
             return "curve"
-        if _under(layer.role, "macro.mark") or _under(layer.role, "macro.turning"):
+        if _under(layer.role, "macro.mark"):
             return "mark"
         return "annotation"
     if isinstance(layer, (BraceLayer, SpanBraceLayer)):

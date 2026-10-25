@@ -7,19 +7,22 @@ from pathlib import Path
 REPOSITORY_ROOT = Path(__file__).parents[1]
 
 
-def test_all_examples_execute_and_write_nonempty_images(tmp_path: Path) -> None:
+def run(script: str, *arguments: str) -> None:
     subprocess.run(
-        [sys.executable, "examples/scripts/run_all.py", "--output", str(tmp_path)],
+        [sys.executable, f"examples/scripts/{script}", *arguments],
         cwd=REPOSITORY_ROOT,
         check=True,
         capture_output=True,
         text=True,
     )
 
+
+def test_keynesian_examples_write_nonempty_images(tmp_path: Path) -> None:
+    run("keynesian.py", "--output", str(tmp_path))
+    run("keynesian_animation.py", "--output", str(tmp_path))
+
     images = {image.stem: image for image in tmp_path.glob("*.svg")}
     assert {
-        "gdp_components",
-        "business_cycle",
         "keynesian_cross",
         "keynesian_cross_curved",
         "multiplier",
@@ -32,7 +35,7 @@ def test_example_output_follows_the_arguments(tmp_path: Path) -> None:
     subprocess.run(
         [
             sys.executable,
-            "examples/scripts/gdp_components.py",
+            "examples/scripts/keynesian.py",
             "--output",
             str(tmp_path / "nested"),
             "--suffix",
@@ -44,4 +47,4 @@ def test_example_output_follows_the_arguments(tmp_path: Path) -> None:
         text=True,
     )
 
-    assert (tmp_path / "nested" / "gdp_components.png").stat().st_size > 0
+    assert (tmp_path / "nested" / "multiplier.png").stat().st_size > 0
