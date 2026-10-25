@@ -27,9 +27,12 @@ from macro_viz.visuals.money import (
     money_demand_canvas,
     money_market_canvas,
 )
+from macro_viz.visuals.open_economy import interest_parity_canvas, open_islm_canvas
 from macro_viz.visuals.panels import five_panel_canvas, four_panel_canvas, linked_panels_canvas
 
 __all__ = [
+    "interest_parity_canvas",
+    "open_islm_canvas",
     "central_bank_money_canvas",
     "golden_rule_canvas",
     "production_function_canvas",

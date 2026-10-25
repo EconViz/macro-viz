@@ -131,6 +131,10 @@ trade directions after fiscal or foreign-demand changes. `open_goods_canvas` dra
 45-degree line, and the output where trade is balanced. Net-exports and J-curve panels need an axis
 below zero and are not drawn.
 
+`InterestParity` (`E = E^e - k (i - i*)`) and `OpenISLM` (IS with an exchange-rate effect) give the
+floating-rate equilibrium `(Y, i, E)` and the fixed-rate one (`i = i*`). `interest_parity_canvas`
+and `open_islm_canvas` draw them; the side-by-side linked panels belong with the linked-panel work.
+
 ## Animation
 
 A figure about a shift or an adjustment animates from the same builder. `pip install

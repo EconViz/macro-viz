@@ -21,6 +21,7 @@ from numbers import Real
 
 from macro_viz.direction import Direction
 from macro_viz.errors import ValidationError
+from macro_viz.islm.models import ISLM
 from macro_viz.keynesian.models import GoodsMarketEquilibrium, KeynesianCross
 
 
@@ -100,3 +101,82 @@ def compare(baseline: OpenEconomy, post: OpenEconomy) -> OpenEconomyShift:
         Direction.of(post.equilibrium().output - baseline.equilibrium().output, tolerance),
         Direction.of(post.trade_balance() - baseline.trade_balance(), tolerance),
     )
+
+
+@dataclass(frozen=True, slots=True)
+class InterestParity:
+    """Linear interest parity: ``E = expected_rate - slope * (i - foreign_rate)``.
+
+    ``E`` is the price of domestic currency, so a higher ``E`` is an appreciation. The line is
+    anchored at ``E = expected_rate`` where the domestic rate ``i`` equals the foreign rate.
+    """
+
+    foreign_rate: float
+    expected_rate: float
+    slope: float
+
+    def __post_init__(self) -> None:
+        for name in ("foreign_rate", "expected_rate"):
+            object.__setattr__(self, name, _finite(name, getattr(self, name)))
+        slope = _finite("slope", self.slope)
+        if slope <= 0:
+            raise ValidationError("slope must be positive")
+        object.__setattr__(self, "slope", slope)
+
+    def exchange_rate(self, rate: float) -> float:
+        return self.expected_rate - self.slope * (rate - self.foreign_rate)
+
+    def rate(self, exchange_rate: float) -> float:
+        """The interest rate consistent with ``exchange_rate``."""
+        return self.foreign_rate + (self.expected_rate - exchange_rate) / self.slope
+
+
+@dataclass(frozen=True, slots=True)
+class OpenISLM:
+    """IS-LM with the exchange rate: ``IS: Y = m (a - b i) - g E`` and interest parity.
+
+    ``exchange_effect`` ``g`` > 0 is how much an appreciation lowers demand (through net exports).
+    Under *floating* rates ``E`` follows parity and the economy is the IS-LM model with a steeper
+    IS curve; under a *fixed* rate ``i`` is pinned at the foreign rate and the LM curve adjusts.
+    """
+
+    base: ISLM
+    parity: InterestParity
+    exchange_effect: float
+
+    def __post_init__(self) -> None:
+        g = _finite("exchange effect", self.exchange_effect)
+        if g < 0:
+            raise ValidationError("exchange effect must not be negative")
+        object.__setattr__(self, "exchange_effect", g)
+
+    def floating_model(self) -> ISLM:
+        """The IS-LM model in ``(Y, i)`` once ``E`` is replaced by parity."""
+        base, g, parity = self.base, self.exchange_effect, self.parity
+        # Y = m (a - b i) - g (e - k (i - i*)) = m (a - (b - g k / m) i) - g (e + k i*)
+        sensitivity = base.sensitivity - g * parity.slope / base.multiplier
+        if sensitivity <= 0:
+            raise ValidationError("the exchange-rate effect makes IS slope upward")
+        autonomous = (
+            base.autonomous
+            - g * (parity.expected_rate + parity.slope * parity.foreign_rate) / base.multiplier
+        )
+        return replace(base, autonomous=autonomous, sensitivity=sensitivity)
+
+    def equilibrium(self) -> tuple[float, float, float]:
+        """Floating regime: ``(Y, i, E)``."""
+        e = self.floating_model().equilibrium()
+        return e.output, e.rate, self.parity.exchange_rate(e.rate)
+
+    def fixed_equilibrium(self) -> tuple[float, float, float]:
+        """Fixed regime with ``E = E_fixed`` implied by ``i = i*``: ``(Y, i*, E)``."""
+        rate = self.parity.foreign_rate
+        exchange = self.parity.exchange_rate(rate)
+        output = (
+            self.base.multiplier * (self.base.autonomous - self.base.sensitivity * rate)
+            - self.exchange_effect * exchange
+        )
+        return output, rate, exchange
+
+    def with_base(self, base: ISLM) -> OpenISLM:
+        return replace(self, base=base)

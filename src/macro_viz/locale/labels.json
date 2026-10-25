@@ -143,7 +143,14 @@
     "islm.mark.real_rate": "$r$",
     "islm.mark.real_rate_shifted": "$r'$",
     "islm.mark.expected_inflation": "$\\pi^e$",
-    "open.mark.balanced": "$Y_{TB}$"
+    "open.mark.balanced": "$Y_{TB}$",
+    "parity.axis.exchange": "$E$",
+    "parity.axis.rate": "$i$",
+    "parity.curve.parity": "$IP$",
+    "parity.mark.foreign_rate": "$i^*$",
+    "parity.mark.expected": "$E^e$",
+    "parity.mark.exchange": "$E$",
+    "parity.mark.rate": "$i$"
   },
   "zh-TW": {
     "axis.origin": "0",
@@ -289,7 +296,14 @@
     "islm.mark.real_rate": "$r$",
     "islm.mark.real_rate_shifted": "$r'$",
     "islm.mark.expected_inflation": "$\\pi^e$",
-    "open.mark.balanced": "$Y_{TB}$"
+    "open.mark.balanced": "$Y_{TB}$",
+    "parity.axis.exchange": "$E$",
+    "parity.axis.rate": "$i$",
+    "parity.curve.parity": "$IP$",
+    "parity.mark.foreign_rate": "$i^*$",
+    "parity.mark.expected": "$E^e$",
+    "parity.mark.exchange": "$E$",
+    "parity.mark.rate": "$i$"
   },
   "zh-CN": {
     "axis.origin": "0",
@@ -435,6 +449,13 @@
     "islm.mark.real_rate": "$r$",
     "islm.mark.real_rate_shifted": "$r'$",
     "islm.mark.expected_inflation": "$\\pi^e$",
-    "open.mark.balanced": "$Y_{TB}$"
+    "open.mark.balanced": "$Y_{TB}$",
+    "parity.axis.exchange": "$E$",
+    "parity.axis.rate": "$i$",
+    "parity.curve.parity": "$IP$",
+    "parity.mark.foreign_rate": "$i^*$",
+    "parity.mark.expected": "$E^e$",
+    "parity.mark.exchange": "$E$",
+    "parity.mark.rate": "$i$"
   }
 }

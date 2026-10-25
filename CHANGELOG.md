@@ -37,6 +37,7 @@ All notable changes to `macro-viz` will be documented in this file.
 - `MoneyMultiplier` and `central_bank_money_canvas`: the market for central-bank money.
 - `ISLMExpectations` and `islm_expectations_canvas`: IS-LM with expected inflation as a given input.
 - `macro_viz.open_economy` and `open_goods_canvas`: the open-economy goods market and trade balance.
+- `InterestParity`, `OpenISLM`, `interest_parity_canvas`, and `open_islm_canvas`: Mundell-Fleming building blocks.
 - A theory-diagram kit (arrowed axes, direct curve labels, dotted guides, dashed old positions) in
   the manual style.
 - `macro_viz.animation` and the `macro-viz[animation]` extra: GIF and native animated SVG from any
