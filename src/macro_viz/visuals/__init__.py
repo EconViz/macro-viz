@@ -21,10 +21,15 @@ from macro_viz.visuals.keynesian import (
     multiplier_canvas,
 )
 from macro_viz.visuals.labor import wsps_canvas
-from macro_viz.visuals.money import money_demand_canvas, money_market_canvas
+from macro_viz.visuals.money import (
+    central_bank_money_canvas,
+    money_demand_canvas,
+    money_market_canvas,
+)
 from macro_viz.visuals.panels import five_panel_canvas, four_panel_canvas, linked_panels_canvas
 
 __all__ = [
+    "central_bank_money_canvas",
     "golden_rule_canvas",
     "production_function_canvas",
     "solow_canvas",

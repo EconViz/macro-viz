@@ -115,6 +115,10 @@ and `five_panel.py`; the scenarios live in `examples/examples.toml`.
 demand goes flat at a zero rate, the LM curve is flat up to the output where money demand reaches zero
 interest, and extra money or an LM shift on the flat part leaves the equilibrium unchanged.
 
+`MoneyMultiplier(c, theta)` gives the money multiplier `1 / (c + theta (1 - c))` and turns a money
+market into the market for central-bank money; `central_bank_money_canvas` draws it with `H`
+labels.
+
 ## Animation
 
 A figure about a shift or an adjustment animates from the same builder. `pip install

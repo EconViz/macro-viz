@@ -7,9 +7,11 @@ from macro_viz.money.models import (
     MoneyMarket,
     MoneyMarketEquilibrium,
     MoneyMarketShift,
+    MoneyMultiplier,
 )
 
 __all__ = [
+    "MoneyMultiplier",
     "Curve",
     "MoneyDemand",
     "MoneyMarket",

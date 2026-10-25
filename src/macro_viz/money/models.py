@@ -142,3 +142,47 @@ class MoneyMarketShift:
     @property
     def money_change(self) -> float:
         return self.post.supply - self.baseline.supply
+
+
+@dataclass(frozen=True, slots=True)
+class MoneyMultiplier:
+    """Central-bank money behind a stock of money: ``H = [c + theta (1 - c)] M``.
+
+    ``currency_ratio`` ``c`` is currency over money held by the public and ``reserve_ratio``
+    ``theta`` is reserves over deposits; the money multiplier is ``1 / (c + theta (1 - c))``.
+    """
+
+    currency_ratio: float
+    reserve_ratio: float
+
+    def __post_init__(self) -> None:
+        for name in ("currency_ratio", "reserve_ratio"):
+            value = _finite(name, getattr(self, name))
+            if not 0 <= value <= 1:
+                raise ValidationError(f"{name} must lie between 0 and 1")
+            object.__setattr__(self, name, value)
+        if self.base_ratio <= 0:
+            raise ValidationError("currency and reserve ratios cannot both be zero")
+
+    @property
+    def base_ratio(self) -> float:
+        """Central-bank money per unit of money, ``c + theta (1 - c)``."""
+        return self.currency_ratio + self.reserve_ratio * (1.0 - self.currency_ratio)
+
+    @property
+    def multiplier(self) -> float:
+        """Money per unit of central-bank money, ``1 / (c + theta (1 - c))``."""
+        return 1.0 / self.base_ratio
+
+    def base_demand(self, demand: MoneyDemand) -> MoneyDemand:
+        """The demand for central-bank money ``H^d = base_ratio * $Y L(R)``."""
+        return MoneyDemand(
+            demand.nominal_income * self.base_ratio,
+            demand.liquidity,
+            demand.rate_max,
+            demand.zero_bound,
+        )
+
+    def market(self, market: MoneyMarket) -> MoneyMarket:
+        """The market for central-bank money: demand ``H^d`` against supply ``M / multiplier``."""
+        return MoneyMarket(self.base_demand(market.demand), market.supply / self.multiplier)
