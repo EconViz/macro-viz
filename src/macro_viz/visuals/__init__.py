@@ -6,6 +6,7 @@ from macro_viz.visuals.adas import (
     aggregate_demand_canvas,
     aggregate_supply_canvas,
 )
+from macro_viz.visuals.islm import islm_canvas
 from macro_viz.visuals.keynesian import (
     consumption_function_canvas,
     keynesian_cross_canvas,
@@ -19,6 +20,7 @@ __all__ = [
     "aggregate_demand_canvas",
     "aggregate_supply_canvas",
     "consumption_function_canvas",
+    "islm_canvas",
     "keynesian_cross_canvas",
     "money_demand_canvas",
     "money_market_canvas",

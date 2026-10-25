@@ -64,6 +64,14 @@ note, or the unknown direction of a demand shift; `aggregate_supply_canvas` and
 the price just observed) after a demand or supply shock, ending at natural output;
 `adas_adjustment_canvas` draws the shifting supply curves and the path A, A', A''.
 
+## IS-LM
+
+`macro_viz.islm.ISLM` is linear: `IS: Y = multiplier * (a - b R)`, `LM: m = d Y - h R` (a vertical
+LM at `h = 0`, nearly horizontal for a large `h`). `equilibrium()` solves both; `analyze_fiscal_policy`
+and `analyze_monetary_policy` return baseline and post models with directions and, for fiscal
+policy, the crowding out. `islm_canvas` draws IS, LM, A, and a shift; the three-panel
+decompositions and policy-mix panels belong with the linked-panel diagrams.
+
 ## Animation
 
 A figure about a shift or an adjustment animates from the same builder. `pip install
