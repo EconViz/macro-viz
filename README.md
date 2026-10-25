@@ -83,6 +83,16 @@ the trend of technology). Figures: `production_function_canvas`, `solow_canvas` 
 arrows), `golden_rule_canvas`, `solow_level_path_canvas`, `solow_log_path_canvas`,
 `solow_growth_rate_canvas`; `effective=True` switches the labels to per effective worker.
 
+## Natural rate of unemployment
+
+`macro_viz.labor.WagePriceSetting` is wage setting `WS: W/P = ws_scale * (level + z - slope * u)`
+against price setting `PS: W/P = ps_scale / (1 + m)`; `natural_rate()` solves `WS = PS`.
+`compare` reports the direction of the natural rate and real wage after a change in benefits `z`,
+markup `m`, or productivity (a common shift leaves `u_n` unchanged, a differential one moves it).
+`wsps_canvas` draws the crossing and shifts on the unemployment axis, or on the employment axis
+(`labor_force=`) with braces for `N` and `U`. Natural output from this model is an input to the
+AS-AD functions.
+
 ## Animation
 
 A figure about a shift or an adjustment animates from the same builder. `pip install

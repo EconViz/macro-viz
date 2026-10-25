@@ -95,7 +95,21 @@
     "solow.effective.mark.golden": "$s_G$",
     "solow.effective.mark.trend": "$g_A$",
     "solow.curve.required_shifted": "$\\delta' K/N$",
-    "solow.effective.curve.required_shifted": "$(\\delta + g')K/AN$"
+    "solow.effective.curve.required_shifted": "$(\\delta + g')K/AN$",
+    "labor.axis.unemployment": "$u$",
+    "labor.axis.employment": "$N$",
+    "labor.axis.wage": "$W/P$",
+    "labor.curve.ws": "$WS$",
+    "labor.curve.ws_shifted": "$WS'$",
+    "labor.curve.ps": "$PS$",
+    "labor.curve.ps_shifted": "$PS'$",
+    "labor.mark.rate": "$u_n$",
+    "labor.mark.rate_shifted": "$u_n'$",
+    "labor.mark.employment": "$N$",
+    "labor.mark.labor_force": "$L$",
+    "labor.mark.wage": "$W/P$",
+    "labor.mark.wage_shifted": "$W'/P'$",
+    "labor.mark.unemployed": "Unemployment $U$"
   },
   "zh-TW": {
     "axis.origin": "0",
@@ -193,7 +207,21 @@
     "solow.effective.mark.golden": "$s_G$",
     "solow.effective.mark.trend": "$g_A$",
     "solow.curve.required_shifted": "$\\delta' K/N$",
-    "solow.effective.curve.required_shifted": "$(\\delta + g')K/AN$"
+    "solow.effective.curve.required_shifted": "$(\\delta + g')K/AN$",
+    "labor.axis.unemployment": "$u$",
+    "labor.axis.employment": "$N$",
+    "labor.axis.wage": "$W/P$",
+    "labor.curve.ws": "$WS$",
+    "labor.curve.ws_shifted": "$WS'$",
+    "labor.curve.ps": "$PS$",
+    "labor.curve.ps_shifted": "$PS'$",
+    "labor.mark.rate": "$u_n$",
+    "labor.mark.rate_shifted": "$u_n'$",
+    "labor.mark.employment": "$N$",
+    "labor.mark.labor_force": "$L$",
+    "labor.mark.wage": "$W/P$",
+    "labor.mark.wage_shifted": "$W'/P'$",
+    "labor.mark.unemployed": "失業 $U$"
   },
   "zh-CN": {
     "axis.origin": "0",
@@ -291,6 +319,20 @@
     "solow.effective.mark.golden": "$s_G$",
     "solow.effective.mark.trend": "$g_A$",
     "solow.curve.required_shifted": "$\\delta' K/N$",
-    "solow.effective.curve.required_shifted": "$(\\delta + g')K/AN$"
+    "solow.effective.curve.required_shifted": "$(\\delta + g')K/AN$",
+    "labor.axis.unemployment": "$u$",
+    "labor.axis.employment": "$N$",
+    "labor.axis.wage": "$W/P$",
+    "labor.curve.ws": "$WS$",
+    "labor.curve.ws_shifted": "$WS'$",
+    "labor.curve.ps": "$PS$",
+    "labor.curve.ps_shifted": "$PS'$",
+    "labor.mark.rate": "$u_n$",
+    "labor.mark.rate_shifted": "$u_n'$",
+    "labor.mark.employment": "$N$",
+    "labor.mark.labor_force": "$L$",
+    "labor.mark.wage": "$W/P$",
+    "labor.mark.wage_shifted": "$W'/P'$",
+    "labor.mark.unemployed": "失业 $U$"
   }
 }

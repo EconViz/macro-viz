@@ -20,6 +20,7 @@ from macro_viz.visuals.keynesian import (
     keynesian_cross_canvas,
     multiplier_canvas,
 )
+from macro_viz.visuals.labor import wsps_canvas
 from macro_viz.visuals.money import money_demand_canvas, money_market_canvas
 
 __all__ = [
@@ -29,6 +30,7 @@ __all__ = [
     "solow_growth_rate_canvas",
     "solow_level_path_canvas",
     "solow_log_path_canvas",
+    "wsps_canvas",
     "adas_adjustment_canvas",
     "adas_canvas",
     "aggregate_demand_canvas",
