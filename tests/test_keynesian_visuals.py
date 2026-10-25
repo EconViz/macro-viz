@@ -133,13 +133,13 @@ def test_consumption_function_has_intercept_and_slope_triangle() -> None:
 
 
 def test_labels_and_language_come_from_the_locale_table() -> None:
-    english = layers(keynesian_cross_canvas(model()))["macro.keynesian.production.label"]
+    english = layers(keynesian_cross_canvas(model()))["macro.keynesian.autonomous"]
     Config.from_dict({"macro": {"language": "zh-TW"}}).use()
-    chinese = layers(keynesian_cross_canvas(model()))["macro.keynesian.production.label"]
-    renamed = layers(keynesian_cross_canvas(model(), labels={"keynesian.curve.production": "P"}))
+    chinese = layers(keynesian_cross_canvas(model()))["macro.keynesian.autonomous"]
+    renamed = layers(keynesian_cross_canvas(model(), labels={"keynesian.mark.degrees": "P"}))
 
-    assert english.text == "Production"  # type: ignore[attr-defined]
-    assert chinese.text == "生產"  # type: ignore[attr-defined]
+    assert english.label == "Autonomous spending"  # type: ignore[attr-defined]
+    assert chinese.label == "自發性支出"  # type: ignore[attr-defined]
     assert renamed["macro.keynesian.production.label"].text == "P"  # type: ignore[attr-defined]
 
 

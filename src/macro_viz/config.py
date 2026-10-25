@@ -69,6 +69,7 @@ _COLOR_FIELDS = (
 _STROKES = {
     "curve": "curve_width",
     "shifted": "shifted_width",
+    "line45": "line45_width",
     "arrow": "arrow_width",
     "guide": "guide_width",
 }
@@ -217,6 +218,7 @@ SCHEMA = econ_toml.register(
             **{f"color.{name}": "unset keeps the shared theme colour" for name in _COLOR_FIELDS},
             "stroke.curve": "theory curve width in points (default 3.5)",
             "stroke.shifted": "old, shifted-from curve width in points (default 1.0)",
+            "stroke.line45": "45-degree line width in points (default 0.8)",
             "stroke.arrow": "movement arrow width in points (default 1.0)",
             "stroke.guide": "guide width in points (default 1.0)",
             "marker.point": "equilibrium dot diameter in points (default 6.5)",

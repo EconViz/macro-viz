@@ -36,7 +36,7 @@ def main(argv: Sequence[str] | None = None) -> None:
     deficit = analyze_demand_shock(natural, autonomous=move["autonomous_after_deficit"])
     adas_adjustment_canvas(analyze_adjustment(deficit)).save(output / f"adjustment_deficit{suffix}")
     oil = analyze_supply_shock(natural, scale=move["cost_scale"])
-    adas_adjustment_canvas(analyze_adjustment(oil, rounds)).save(output / f"adjustment_oil{suffix}")
+    adas_adjustment_canvas(analyze_adjustment(oil)).save(output / f"adjustment_oil{suffix}")
 
 
 if __name__ == "__main__":

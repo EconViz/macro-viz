@@ -63,3 +63,21 @@ def test_example_output_follows_the_arguments(tmp_path: Path) -> None:
     )
 
     assert (tmp_path / "nested" / "multiplier.png").stat().st_size > 0
+
+
+def test_no_label_overlaps_a_line_or_another_label(tmp_path: Path) -> None:
+    """Every example figure is drawn with label placement failures turned into errors."""
+    import importlib
+    import warnings
+
+    from mosaickit import LayoutWarning
+
+    scripts = str(REPOSITORY_ROOT / "examples" / "scripts")
+    sys.path.insert(0, scripts)
+    try:
+        with warnings.catch_warnings():
+            warnings.simplefilter("error", LayoutWarning)
+            for name in ("keynesian", "money", "adas", "adas_adjustment"):
+                importlib.import_module(name).main(["--output", str(tmp_path)])
+    finally:
+        sys.path.remove(scripts)

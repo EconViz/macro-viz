@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from collections.abc import Mapping
 
-from mosaickit import BraceLayer, Canvas, Layer, MarkerLayer, TextLayer
+from mosaickit import BraceLayer, Canvas, Layer, MarkerLayer, PathLayer, TextLayer
 
 from macro_viz.errors import ValidationError
 from macro_viz.i18n import Labels
@@ -144,12 +144,23 @@ def _base_layers(
 ) -> list[Layer]:
     """The 45-degree production line and the demand curve of ``model``."""
     production = trim([(0.0, 0.0), (x_max, x_max)], x_max, x_max)
-    layers = curve(
-        production,
-        layer_id="macro.keynesian.production",
-        role="macro.curve.secondary",
-        label=text("keynesian.curve.production"),
-    )
+    layers: list[Layer] = [
+        PathLayer(
+            tuple(production),
+            id="macro.keynesian.production",
+            role="macro.line45",
+            clip=False,
+            z_index=2,
+        ),
+        TextLayer(
+            production[-1],
+            text("keynesian.mark.degrees"),
+            id="macro.keynesian.production.label",
+            role="macro.annotation",
+            anchor="bottom-left",
+            offset=(LABEL_GAP, 0),
+        ),
+    ]
     demand = trim(sample(model.demand, 0.0, x_max, samples), x_max, x_max)
     layers += curve(demand, layer_id=demand_id, role=role, label=text(demand_label_id))
     return layers

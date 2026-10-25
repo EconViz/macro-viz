@@ -25,6 +25,7 @@ from macro_viz.visuals._theory import (
     point_name,
     primed,
     sample,
+    shift_arrow,
     theory_canvas,
     trim,
 )
@@ -34,6 +35,9 @@ SHIFT_ARROW_SHARE = 0.55
 
 AMBIGUOUS_SPAN_SHARE = 0.08
 """Length of each arrow of an ambiguous shift, as a share of the horizontal axis."""
+
+DEMAND_FLOOR_SHARE = 0.2
+"""Demand curves end at this share of the price axis, so shifted curves end side by side."""
 
 MARKED_OUTPUTS = 2
 """How many leading points of an adjustment path get a mark for their output on the axis."""
@@ -58,7 +62,7 @@ def demand_curve(
     """The aggregate demand curve from the top of the plot to the right edge."""
     top = HEADROOM * y_max
     start = demand.autonomous + demand.multiplier * demand.money / top
-    stop = HEADROOM * x_max
+    stop = min(HEADROOM * x_max, demand.output(DEMAND_FLOOR_SHARE * y_max))
     if start >= stop:
         raise ValidationError("the demand curve does not enter the plot; widen the axes")
     return sample(demand.price, start, stop, samples)
@@ -159,10 +163,11 @@ def aggregate_supply_canvas(
             )
         )
         canvas.add(
-            movement(
+            shift_arrow(
                 (SHIFT_ARROW_SHARE * right, supply.price(SHIFT_ARROW_SHARE * right)),
                 (SHIFT_ARROW_SHARE * right, shifted.price(SHIFT_ARROW_SHARE * right)),
                 layer_id="macro.adas.shift",
+                extent=(right, top),
             )
         )
     return canvas
@@ -222,7 +227,9 @@ def aggregate_demand_canvas(
             )
         )
         start, end = (demand.output(level), level), (shifted.output(level), level)
-        canvas.add(movement(start, end, layer_id=f"macro.adas.shift{suffix}"))
+        canvas.add(
+            shift_arrow(start, end, layer_id=f"macro.adas.shift{suffix}", extent=(x_max, y_max))
+        )
         if index < len(captions):
             canvas.add(
                 TextLayer(
@@ -364,10 +371,11 @@ def _shift_layers(
         )
         x = SHIFT_ARROW_SHARE * right
         layers.append(
-            movement(
+            shift_arrow(
                 (x, shift.baseline.supply.price(x)),
                 (x, post.supply.price(x)),
                 layer_id="macro.adas.shift",
+                extent=(right, top),
             )
         )
     else:
@@ -379,10 +387,11 @@ def _shift_layers(
         )
         level = SHIFT_ARROW_SHARE * top
         layers.append(
-            movement(
+            shift_arrow(
                 (shift.baseline.demand.output(level), level),
                 (post.demand.output(level), level),
                 layer_id="macro.adas.shift",
+                extent=(right, top),
             )
         )
     if ambiguous:

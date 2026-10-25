@@ -43,7 +43,7 @@ def main(argv: Sequence[str] | None = None) -> None:
     adas_canvas(productivity_shock, ambiguous_demand=True).save(
         output / f"adas_productivity{suffix}"
     )
-    demand_shock = analyze_demand_shock(model, autonomous=data["autonomous_after"])
+    demand_shock = analyze_demand_shock(model, autonomous=data["autonomous_shock"])
     adas_canvas(demand_shock).save(output / f"adas_demand_shock{suffix}")
 
 

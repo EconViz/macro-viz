@@ -49,6 +49,7 @@ productivity_scale = 0.75
 productivity = 1.0
 demand_x_max = 240
 demand_y_max = 2.2
+autonomous_shock = 115
 caption_government = "Increase in government spending"
 caption_money = "Decrease in nominal money"
 

@@ -108,14 +108,33 @@ def _require_kinetickit() -> None:
 
 
 def _png_frames(builder: Builder, values: Sequence[float], dpi: int, stem: str) -> Iterator[bytes]:
+    """PNG bytes of every frame, padded with white to one common size.
+
+    Labels that change width (a mark ``p'`` against ``p''``) make the tight bounding box differ
+    from frame to frame; a GIF needs one size.
+    """
+    import io
+
+    from PIL import Image
+
     with tempfile.TemporaryDirectory(prefix="macro-viz-animation-") as directory:
+        images: list[Image.Image] = []
         for index, canvas in enumerate(frames(builder, values)):
             canvas.spec = canvas.spec.replace(dpi=dpi)
             # Named after the animation, so per-figure label overrides reach every frame.
             target = Path(directory) / f"{index:06d}" / f"{stem}.png"
             target.parent.mkdir(parents=True, exist_ok=True)
             canvas.save(target, transparent=False)
-            yield target.read_bytes()
+            with Image.open(target) as opened:
+                images.append(opened.convert("RGB"))
+        width = max(image.width for image in images)
+        height = max(image.height for image in images)
+        for image in images:
+            padded = Image.new("RGB", (width, height), "white")
+            padded.paste(image, (0, 0))
+            buffer = io.BytesIO()
+            padded.save(buffer, format="PNG")
+            yield buffer.getvalue()
 
 
 def save_gif(

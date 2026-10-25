@@ -23,9 +23,9 @@ def test_every_language_has_the_same_label_ids() -> None:
 
 
 def test_text_looks_up_ids_per_language_and_rejects_unknown_ones() -> None:
-    assert text("keynesian.curve.production", language="en") == "Production"
-    assert text("keynesian.curve.production", language="zh-TW") == "生產"
-    assert text("keynesian.curve.production", language="zh-CN") == "生产"
+    assert text("keynesian.mark.autonomous", language="en") == "Autonomous spending"
+    assert text("keynesian.mark.autonomous", language="zh-TW") == "自發性支出"
+    assert text("keynesian.mark.autonomous", language="zh-CN") == "自发性支出"
     with pytest.raises(ValidationError):
         text("no.such.id", language="en")
     with pytest.raises(ValidationError):
@@ -48,6 +48,6 @@ def test_the_configured_language_selects_the_text() -> None:
 
 
 def test_overrides_replace_text_and_unknown_ids_raise() -> None:
-    assert Labels({"keynesian.curve.production": "P"})("keynesian.curve.production") == "P"
+    assert Labels({"keynesian.mark.degrees": "P"})("keynesian.mark.degrees") == "P"
     with pytest.raises(ValidationError):
         Labels({"no.such.label": "x"})
