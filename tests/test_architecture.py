@@ -22,6 +22,7 @@ DOMAIN_MODULES = (
     "graduate",
     "open_economy",
     "transmission",
+    "panels",
 )
 
 

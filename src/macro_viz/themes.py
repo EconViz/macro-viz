@@ -36,6 +36,8 @@ class ThemeOptions:
     line45_width: float = 0.8
     arrow_width: float = 1.0
     guide_width: float = 1.0
+    link_width: float = 0.7
+    diagonal_width: float = 0.6
     point_size: float = 42.25
     font: str = "sans"
     label_size: float = 11.0
@@ -69,6 +71,8 @@ def options_from_tokens(tokens: ThemeTokens, *, font: str = "sans") -> ThemeOpti
         shifted_width=base.shifted_width * tokens.line_scale,
         arrow_width=base.arrow_width * tokens.line_scale,
         guide_width=base.guide_width * tokens.line_scale,
+        link_width=base.link_width * tokens.line_scale,
+        diagonal_width=base.diagonal_width * tokens.line_scale,
         point_size=base.point_size * tokens.marker_scale**2,
         text_scale=tokens.label_scale,
     )
@@ -121,6 +125,22 @@ def build_theme(options: ThemeOptions) -> Theme:
             text=_text(o, o.tertiary, o.label_size),
         ),
     }
+    roles.update(
+        {
+            # Linked panels: bold main curves, thin grey shifted ones, thin dashed links.
+            "macro.curve.panel": StyleBundle(
+                stroke=Stroke(color=o.axis, width=o.curve_width), text=label
+            ),
+            "macro.curve.panel.shifted": StyleBundle(
+                stroke=Stroke(color=o.tertiary, width=o.shifted_width), text=label
+            ),
+            "macro.link": StyleBundle(
+                stroke=Stroke(color=o.axis, width=o.link_width, dash=DashStyle.DASHED)
+            ),
+            "macro.diagonal": StyleBundle(stroke=Stroke(color=o.axis, width=o.diagonal_width)),
+            "macro.shift": StyleBundle(stroke=Stroke(color=o.axis, width=o.arrow_width)),
+        }
+    )
     for name, color in curves.items():
         roles[f"macro.curve.{name}"] = StyleBundle(
             stroke=Stroke(color=color, width=o.curve_width),

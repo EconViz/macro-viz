@@ -22,6 +22,7 @@ from macro_viz.visuals.keynesian import (
 )
 from macro_viz.visuals.labor import wsps_canvas
 from macro_viz.visuals.money import money_demand_canvas, money_market_canvas
+from macro_viz.visuals.panels import five_panel_canvas, four_panel_canvas, linked_panels_canvas
 
 __all__ = [
     "golden_rule_canvas",
@@ -37,7 +38,10 @@ __all__ = [
     "aggregate_supply_canvas",
     "consumption_function_canvas",
     "islm_canvas",
+    "five_panel_canvas",
+    "four_panel_canvas",
     "keynesian_cross_canvas",
+    "linked_panels_canvas",
     "money_demand_canvas",
     "money_market_canvas",
     "multiplier_canvas",
