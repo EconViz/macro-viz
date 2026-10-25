@@ -36,6 +36,11 @@ All notable changes to `macro-viz` will be documented in this file.
   the manual style.
 - `macro_viz.animation` and the `macro-viz[animation]` extra: GIF and native animated SVG from any
   figure builder through KineticKit. Static figures work without it.
+- `macro_viz.panels` and `four_panel_canvas` / `five_panel_canvas`: linked quadrant diagrams (labour
+  market, production function, 45-degree line, AD-AS, and IS-LM above AD-AS) on one MosaicKit grid.
+  Typed blocks solve the equilibria (`MacroEconomy`, `Shock`, `Scenario`) so a value shared between
+  panels is one number; panels that show a variable share its axis range and dashed projections
+  are drawn from data. Added the `stroke.link` and `stroke.diagonal` settings.
 - Executable examples that read their data, titles, output folder, and settings from files and
   arguments.
 

@@ -83,6 +83,24 @@ the trend of technology). Figures: `production_function_canvas`, `solow_canvas` 
 arrows), `golden_rule_canvas`, `solow_level_path_canvas`, `solow_log_path_canvas`,
 `solow_growth_rate_canvas`; `effective=True` switches the labels to per effective worker.
 
+## Linked panels (four and five quadrants)
+
+`four_panel_canvas(scenario)` draws the labour market, AD-AS, the production function and the
+45-degree line on one grid; `five_panel_canvas(scenario)` adds IS-LM above AD-AS so the right
+column shares one `Y` axis. A `Scenario` is a baseline `MacroEconomy` and labelled `Step`s (`A`, `B`,
+`C`), each a `Shock` of parameters (capital, money, expenditure, expected price) at a given or
+market-clearing price level. Equations (documented in `macro_viz.panels.model`):
+
+```text
+W = p f(N, K)     labour demand          W = pe h(N)      labour supply
+Y = K^theta (a N - b N^2 / 2)            production function, f = dY/dN
+IS: Y = X - e R   LM: M / p = k Y - h R  AD: Y = (X + (e / h) M / p) / (1 + e k / h)
+```
+
+`Mode.SCHEMATIC` (default) draws straight lines through the solved points, as in textbook
+figures; `Mode.DERIVED` draws the curves from the equations. See `examples/scripts/four_panel.py`
+and `five_panel.py`; the scenarios live in `examples/examples.toml`.
+
 ## Animation
 
 A figure about a shift or an adjustment animates from the same builder. `pip install
