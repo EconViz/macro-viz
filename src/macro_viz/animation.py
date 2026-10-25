@@ -69,6 +69,15 @@ LABEL_GAP = 5.0
 LABEL_CORNERS = (("left", "bottom"), ("right", "bottom"), ("left", "top"), ("right", "top"))
 """Where a point label may sit relative to its point, in order of preference."""
 
+DEFAULT_TEXT_SIZE = 11.0
+"""Font size in points of a label whose theme role names none."""
+
+DEFAULT_MARKER_AREA = 36.0
+"""Area in square points of a marker whose theme role names no size."""
+
+SEGMENT_SAMPLES = 12
+"""How many points along a line are tested when a label is placed beside it."""
+
 BASELINE_SHARE = {"top": 0.78, "center": 0.34, "bottom": 0.0}
 """Where the baseline sits below the anchor, as a share of the font size, per vertical anchor."""
 
@@ -137,29 +146,41 @@ def save_gif(
 
 @dataclass(frozen=True)
 class _Geometry:
-    """How world units relate to points in an animated SVG."""
+    """Where the axes sit in an animated SVG, whose world units are points.
 
-    per_point: float
-    view: tuple[float, float, float, float]
+    KineticKit scales a scene uniformly, so the figure is laid out in points (``width`` by
+    ``height``) and each axis is mapped linearly onto the plot area inside the margins.
+    """
+
+    x_range: tuple[float, float]
+    y_range: tuple[float, float]
     width: float
     height: float
+    margin: tuple[float, float, float, float]
+
+    def world(self, point: tuple[float, float]) -> tuple[float, float]:
+        left, bottom, right, top = self.margin
+        (x0, x1), (y0, y1) = self.x_range, self.y_range
+        return (
+            left + (point[0] - x0) / (x1 - x0) * (self.width - left - right),
+            bottom + (point[1] - y0) / (y1 - y0) * (self.height - top - bottom),
+        )
+
+    @property
+    def plot(self) -> tuple[float, float, float, float]:
+        left, bottom, right, top = self.margin
+        return (left, bottom, self.width - right, self.height - top)
 
 
 def _geometry(canvas: Canvas, margin: tuple[float, float, float, float]) -> _Geometry:
     spec = canvas.spec
-    left, bottom, right, top = margin
-    width, height = spec.width * POINTS_PER_INCH, spec.height * POINTS_PER_INCH
-    per_point = max(
-        (spec.x_max - spec.x_min) / (width - left - right),
-        (spec.y_max - spec.y_min) / (height - top - bottom),
+    return _Geometry(
+        spec.x_range,
+        spec.y_range,
+        spec.width * POINTS_PER_INCH,
+        spec.height * POINTS_PER_INCH,
+        margin,
     )
-    view = (
-        spec.x_min - left * per_point,
-        spec.y_min - bottom * per_point,
-        spec.x_min + (width - left) * per_point,
-        spec.y_min + (height - bottom) * per_point,
-    )
-    return _Geometry(per_point, view, width, height)
 
 
 class _Depicter:
@@ -184,7 +205,7 @@ class _Depicter:
         self.typography = typography
         self.spec = canvas.spec
         self.segments = [
-            (a, b)
+            (geometry.world(a), geometry.world(b))
             for layer in canvas.snapshot().layers
             if isinstance(layer, PathLayer) and layer.role.startswith("macro.")
             for a, b in zip(layer.path, layer.path[1:], strict=False)
@@ -215,17 +236,16 @@ class _Depicter:
         if stroke is None or stroke.color is None:
             return []
         kk = self._kk
-        nodes: list[Node] = [
+        return [
             kk["PathNode2D"](
                 id=layer_id,
-                path=kk["Path2D"].polyline(list(points)),
+                path=kk["Path2D"].polyline([self.geometry.world(p) for p in points]),
                 color=self.color(stroke.color, stroke.opacity),
                 width=float(stroke.width or 1.0),
                 dash=self.dash(stroke),
                 z=layer.z_index,
             )
         ]
-        return nodes
 
     def head(
         self, layer_id: str, start: tuple[float, float], end: tuple[float, float], layer: Layer
@@ -233,17 +253,18 @@ class _Depicter:
         stroke = self.stroke(layer)
         if stroke is None or stroke.color is None:
             return []
-        scale = self.geometry.per_point * float(stroke.width or 1.0)
-        dx, dy = end[0] - start[0], end[1] - start[1]
+        a, b = self.geometry.world(start), self.geometry.world(end)
+        width = float(stroke.width or 1.0)
+        dx, dy = b[0] - a[0], b[1] - a[1]
         length = (dx * dx + dy * dy) ** 0.5
         if length == 0:
             return []
         ux, uy = dx / length, dy / length
-        back = ARROW_HEAD_LENGTH * scale
-        half = ARROW_HEAD_HALF_WIDTH * scale
-        base = (end[0] - ux * back, end[1] - uy * back)
+        back = ARROW_HEAD_LENGTH * width
+        half = ARROW_HEAD_HALF_WIDTH * width
+        base = (b[0] - ux * back, b[1] - uy * back)
         corners = [
-            end,
+            b,
             (base[0] - uy * half, base[1] + ux * half),
             (base[0] + uy * half, base[1] - ux * half),
         ]
@@ -269,24 +290,22 @@ class _Depicter:
         offset: tuple[float, float] = (0.0, 0.0),
     ) -> list[Node]:
         text_style = self.bundle(layer).text
-        size = float(text_style.size) if text_style and text_style.size else 11.0
+        size = float(text_style.size) if text_style and text_style.size else DEFAULT_TEXT_SIZE
         color = self.color(text_style.color) if text_style and text_style.color else None
         asset = self.typography.asset(label, size)
-        k = self.geometry.per_point
-        width, height = asset.width * k, asset.height * k
-        x = position[0] + offset[0] * k
-        y = position[1] + offset[1] * k
-        x -= {"left": 0.0, "center": width / 2, "right": width}[horizontal]
-        y -= BASELINE_SHARE[vertical] * size * k
+        x, y = self.geometry.world(position)
+        x += offset[0]
+        y += offset[1]
+        x -= {"left": 0.0, "center": asset.width / 2, "right": asset.width}[horizontal]
+        y -= BASELINE_SHARE[vertical] * size
         kk = self._kk
         extra = {"color": color} if color is not None else {}
-        del height
         return [
             kk["Text2D"](
                 id=layer_id,
                 asset=asset,
                 position=kk["Vec2"](x, y),
-                scale=k,
+                scale=1.0,
                 z=layer.z_index + 10,
                 **extra,
             )
@@ -295,16 +314,14 @@ class _Depicter:
     def point_label(self, layer: PointLabelLayer) -> list[Node]:
         """The label at the corner of its point that crosses the fewest lines and labels."""
         text_style = self.bundle(layer).text
-        size = float(text_style.size) if text_style and text_style.size else 11.0
+        size = float(text_style.size) if text_style and text_style.size else DEFAULT_TEXT_SIZE
         asset = self.typography.asset(layer.text, size)
-        k = self.geometry.per_point
-        width, height = asset.width * k, size * k
-        gap = LABEL_GAP * k
-        px, py = layer.point
+        width, height = asset.width, size
+        px, py = self.geometry.world(layer.point)
         best = None
         for horizontal, vertical in LABEL_CORNERS:
-            left = px + gap if horizontal == "left" else px - gap - width
-            bottom = py + gap if vertical == "bottom" else py - gap - height
+            left = px + LABEL_GAP if horizontal == "left" else px - LABEL_GAP - width
+            bottom = py + LABEL_GAP if vertical == "bottom" else py - LABEL_GAP - height
             box = (left, bottom, left + width, bottom + height)
             cost = self.crossings(box) + sum(_overlap(box, other) for other in self.placed)
             cost += 0 if self.inside(box) else 1
@@ -320,13 +337,15 @@ class _Depicter:
             layer,
             horizontal=horizontal,
             vertical=vertical,
-            offset=(LABEL_GAP if horizontal == "left" else -LABEL_GAP,)
-            + (LABEL_GAP if vertical == "bottom" else -LABEL_GAP,),
+            offset=(
+                LABEL_GAP if horizontal == "left" else -LABEL_GAP,
+                LABEL_GAP if vertical == "bottom" else -LABEL_GAP,
+            ),
         )
 
     def inside(self, box: tuple[float, float, float, float]) -> bool:
-        spec = self.spec
-        return box[0] >= spec.x_min and box[2] <= spec.x_max and box[3] <= spec.y_max
+        left, bottom, right, top = self.geometry.plot
+        return box[0] >= left and box[2] <= right and box[3] <= top
 
     def crossings(self, box: tuple[float, float, float, float]) -> int:
         return sum(_segment_hits_box(a, b, box) for a, b in self.segments)
@@ -353,7 +372,7 @@ class _Depicter:
             return [
                 kk["Shape2D"](
                     id=layer.id,
-                    path=kk["Path2D"].polygon(list(layer.boundary)),
+                    path=kk["Path2D"].polygon([self.geometry.world(p) for p in layer.boundary]),
                     fill=self.color(fill.color, fill.opacity),
                     z=layer.z_index,
                 )
@@ -362,11 +381,11 @@ class _Depicter:
             marker = self.bundle(layer).marker
             if marker is None or marker.color is None:
                 return []
-            radius = float(marker.size or 36.0) ** 0.5 / 2
+            radius = float(marker.size or DEFAULT_MARKER_AREA) ** 0.5 / 2
             return [
                 kk["Point2D"](
                     id=f"{layer.id}.{index}",
-                    position=kk["Vec2"](*point),
+                    position=kk["Vec2"](*self.geometry.world(point)),
                     size=radius,
                     color=self.color(marker.color, marker.opacity),
                     z=layer.z_index,
@@ -387,10 +406,11 @@ class _Depicter:
             return self.point_label(layer)
         if isinstance(layer, AxisMarkLayer):
             spec = self.spec
+            label = _plain(layer.label, layer.math)
             if layer.axis == "x":
                 return self.text(
                     layer.id,
-                    _plain(layer.label, layer.math),
+                    label,
                     (layer.value, spec.y_min),
                     layer,
                     horizontal="center",
@@ -399,7 +419,7 @@ class _Depicter:
                 )
             return self.text(
                 layer.id,
-                _plain(layer.label, layer.math),
+                label,
                 (spec.x_min, layer.value),
                 layer,
                 horizontal="right",
@@ -417,10 +437,9 @@ def _segment_hits_box(
     start: tuple[float, float], end: tuple[float, float], box: tuple[float, float, float, float]
 ) -> int:
     """Whether the segment passes through the rectangle (sampled along its length)."""
-    steps = 12
-    for k in range(steps + 1):
-        x = start[0] + (end[0] - start[0]) * k / steps
-        y = start[1] + (end[1] - start[1]) * k / steps
+    for k in range(SEGMENT_SAMPLES + 1):
+        x = start[0] + (end[0] - start[0]) * k / SEGMENT_SAMPLES
+        y = start[1] + (end[1] - start[1]) * k / SEGMENT_SAMPLES
         if box[0] <= x <= box[2] and box[1] <= y <= box[3]:
             return 1
     return 0
@@ -527,8 +546,8 @@ def save_svg(
     for step in steps[1:]:
         motion = motion.then(step.motion)
     scene = steps[0].scene
-    left, bottom, right, top = geometry.view
-    scene = scene.bind({scene.camera.ref("view"): Bounds2D(Vec2(left, bottom), Vec2(right, top))})
+    view = Bounds2D(Vec2(0.0, 0.0), Vec2(geometry.width, geometry.height))
+    scene = scene.bind({scene.camera.ref("view"): view})
     target = Path(path)
     target.parent.mkdir(parents=True, exist_ok=True)
     Animation(scene, motion).save(

@@ -8,6 +8,7 @@ dashed. Every function returns public MosaicKit layers with stable ids.
 
 from __future__ import annotations
 
+import string
 from collections.abc import Callable, Sequence
 
 from mosaickit import (
@@ -34,8 +35,16 @@ DEFAULT_SAMPLES = 60
 HEADROOM = 0.92
 """Share of an axis a curve may reach, leaving room for its name and the axis arrow."""
 
+PRIME = "'"
+"""The mark appended to a point name for each step beyond the baseline."""
+
 EXTENT = 1.6
 """Default length of the horizontal axis as a multiple of the largest equilibrium value."""
+
+
+def point_name(index: int, prime: int = 0) -> str:
+    """``A``, ``B``, ... followed by ``prime`` primes, as a math label."""
+    return f"${string.ascii_uppercase[index]}{PRIME * prime}$"
 
 
 def sample(

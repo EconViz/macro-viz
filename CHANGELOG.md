@@ -16,6 +16,8 @@ All notable changes to `macro-viz` will be documented in this file.
 - `macro_viz.keynesian`: consumption function, Keynesian cross (linear and curved demand), and
   autonomous-spending shifts with the multiplier process, with the figures
   `consumption_function_canvas`, `keynesian_cross_canvas`, and `multiplier_canvas`.
+- `macro_viz.money`: money demand and supply, the equilibrium interest rate, and comparative statics
+  for nominal income and the money supply, with `money_market_canvas` and `money_demand_canvas`.
 - A theory-diagram kit (arrowed axes, direct curve labels, dotted guides, dashed old positions) in
   the manual style.
 - `macro_viz.animation` and the `macro-viz[animation]` extra: GIF and native animated SVG from any

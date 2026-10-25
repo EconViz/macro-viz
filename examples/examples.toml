@@ -19,3 +19,18 @@ frames = 6
 step_seconds = 0.6
 fps = 10
 dpi = 100
+
+[money]
+nominal_income = 100
+nominal_income_after = 130
+liquidity_intercept = 0.9
+liquidity_slope = 0.12
+rate_max = 6
+supply = 60
+supply_after = 80
+
+[money_animation]
+frames = 6
+step_seconds = 0.6
+fps = 10
+dpi = 100

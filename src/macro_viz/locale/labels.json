@@ -15,7 +15,17 @@
     "keynesian.mark.output": "$Y$",
     "keynesian.mark.output_shifted": "$Y'$",
     "keynesian.mark.autonomous": "Autonomous spending",
-    "keynesian.mark.shift": "$\\Delta A$"
+    "keynesian.mark.shift": "$\\Delta A$",
+    "money.axis.money": "$M$",
+    "money.axis.rate": "$i$",
+    "money.curve.demand": "$M^d$",
+    "money.curve.demand_shifted": "$M^{d'}$",
+    "money.curve.supply": "$M^s$",
+    "money.curve.supply_shifted": "$M^{s'}$",
+    "money.mark.money": "$M$",
+    "money.mark.money_shifted": "$M'$",
+    "money.mark.rate": "$i$",
+    "money.mark.rate_shifted": "$i'$"
   },
   "zh-TW": {
     "axis.origin": "0",
@@ -33,7 +43,17 @@
     "keynesian.mark.output": "$Y$",
     "keynesian.mark.output_shifted": "$Y'$",
     "keynesian.mark.autonomous": "自發性支出",
-    "keynesian.mark.shift": "$\\Delta A$"
+    "keynesian.mark.shift": "$\\Delta A$",
+    "money.axis.money": "$M$",
+    "money.axis.rate": "$i$",
+    "money.curve.demand": "$M^d$",
+    "money.curve.demand_shifted": "$M^{d'}$",
+    "money.curve.supply": "$M^s$",
+    "money.curve.supply_shifted": "$M^{s'}$",
+    "money.mark.money": "$M$",
+    "money.mark.money_shifted": "$M'$",
+    "money.mark.rate": "$i$",
+    "money.mark.rate_shifted": "$i'$"
   },
   "zh-CN": {
     "axis.origin": "0",
@@ -51,6 +71,16 @@
     "keynesian.mark.output": "$Y$",
     "keynesian.mark.output_shifted": "$Y'$",
     "keynesian.mark.autonomous": "自发性支出",
-    "keynesian.mark.shift": "$\\Delta A$"
+    "keynesian.mark.shift": "$\\Delta A$",
+    "money.axis.money": "$M$",
+    "money.axis.rate": "$i$",
+    "money.curve.demand": "$M^d$",
+    "money.curve.demand_shifted": "$M^{d'}$",
+    "money.curve.supply": "$M^s$",
+    "money.curve.supply_shifted": "$M^{s'}$",
+    "money.mark.money": "$M$",
+    "money.mark.money_shifted": "$M'$",
+    "money.mark.rate": "$i$",
+    "money.mark.rate_shifted": "$i'$"
   }
 }

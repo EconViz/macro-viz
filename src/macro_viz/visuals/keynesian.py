@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import string
 from collections.abc import Mapping
 
 from mosaickit import BraceLayer, Canvas, Layer, MarkerLayer, TextLayer
@@ -28,6 +27,7 @@ from macro_viz.visuals._theory import (
     marked_point,
     movement,
     movement_label,
+    point_name,
     sample,
     theory_canvas,
     trim,
@@ -39,19 +39,11 @@ SLOPE_RUN_SHARE = 0.2
 SLOPE_POSITION = 0.55
 """Where along the horizontal axis the slope triangle starts, as a share of its length."""
 
-PRIME = "'"
-"""The mark appended to a point name for each step beyond the baseline."""
-
 SHIFT_ARROW_POSITION = 0.85
 """Where along the horizontal axis the arrow showing a curve's shift stands, as a share of it."""
 
 LABEL_GAP = 4.0
 """Gap in points between a line and the text beside it."""
-
-
-def _point_name(index: int, prime: int = 0) -> str:
-    """``A``, ``B``, ... with ``prime`` primes, as a math label."""
-    return f"${string.ascii_uppercase[index]}{PRIME * prime}$"
 
 
 def consumption_function_canvas(
@@ -205,7 +197,7 @@ def keynesian_cross_canvas(
             layer_id="macro.keynesian.equilibrium.guide",
         )
     )
-    canvas.extend(marked_point(point, _point_name(0), layer_id="macro.keynesian.equilibrium"))
+    canvas.extend(marked_point(point, point_name(0), layer_id="macro.keynesian.equilibrium"))
     drawn = isinstance(model, KeynesianCross) if show_autonomous is None else show_autonomous
     intercept = model.demand(0.0)
     if drawn and intercept > 0:
@@ -284,11 +276,11 @@ def multiplier_canvas(
             layer_id="macro.keynesian.equilibrium.shifted.guide",
         )
     )
-    canvas.extend(marked_point(start, _point_name(0), layer_id="macro.keynesian.equilibrium"))
+    canvas.extend(marked_point(start, point_name(0), layer_id="macro.keynesian.equilibrium"))
     canvas.extend(
         marked_point(
             end,
-            _point_name(0, prime=1),
+            point_name(0, prime=1),
             layer_id="macro.keynesian.equilibrium.shifted",
             role="macro.point.shifted",
         )
@@ -326,13 +318,11 @@ def _path_layers(shift: AutonomousShift, rounds: int, text: Labels) -> list[Laye
             movement(corner, target, layer_id=f"macro.keynesian.step.{step.round}.output")
         )
         layers.extend(
-            marked_point(
-                corner, _point_name(index), layer_id=f"macro.keynesian.step.{step.round}.b"
-            )
+            marked_point(corner, point_name(index), layer_id=f"macro.keynesian.step.{step.round}.b")
         )
         layers.extend(
             marked_point(
-                target, _point_name(index + 1), layer_id=f"macro.keynesian.step.{step.round}.c"
+                target, point_name(index + 1), layer_id=f"macro.keynesian.step.{step.round}.c"
             )
         )
         index += 2
