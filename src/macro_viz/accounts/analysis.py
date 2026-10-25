@@ -13,6 +13,7 @@ from macro_viz.accounts.models import (
     LaborMarketResult,
 )
 from macro_viz.errors import ValidationError
+from macro_viz.i18n import text
 from macro_viz.series import IndexBase, Observation, TimeSeries
 
 
@@ -36,7 +37,7 @@ def analyze_gdp_components(components: GDPComponents) -> GDPDecompositionResult:
 
 
 def analyze_gdp_series(
-    nominal: TimeSeries, real: TimeSeries, *, base_period: date
+    nominal: TimeSeries, real: TimeSeries, *, base_period: date, deflator_name: str | None = None
 ) -> GDPSeriesResult:
     """Calculate the GDP deflator as ``100 * nominal / real``.
 
@@ -62,16 +63,18 @@ def analyze_gdp_series(
     if base_value is None or not abs(base_value - 100) <= 1e-9:
         raise ValidationError("nominal and real GDP must agree in the base period")
     deflator = TimeSeries(
-        name="GDP deflator",
+        name=deflator_name or text("series.gdp_deflator"),
         dates=nominal.dates,
         values=tuple(values),
-        unit="index",
+        unit=text("unit.index"),
         index_base=IndexBase(base_period),
     )
     return GDPSeriesResult(nominal=nominal, real=real, deflator=deflator)
 
 
-def calculate_inflation(price_index: TimeSeries, *, periods: int = 1) -> InflationResult:
+def calculate_inflation(
+    price_index: TimeSeries, *, periods: int = 1, name: str | None = None
+) -> InflationResult:
     """Calculate percentage price-index changes with explicit missing propagation."""
     if price_index.index_base is None:
         raise ValidationError("price index must declare its index base")
@@ -92,15 +95,21 @@ def calculate_inflation(price_index: TimeSeries, *, periods: int = 1) -> Inflati
         else:
             values.append(100 * (current - previous) / previous)
     inflation = TimeSeries(
-        name=f"{price_index.name} inflation",
+        name=name or text("series.inflation_of", name=price_index.name),
         dates=price_index.dates,
         values=tuple(values),
-        unit="percent",
+        unit=text("unit.percent"),
     )
     return InflationResult(price_index=price_index, inflation_rate=inflation, periods=periods)
 
 
-def analyze_labor_market(labor_force: TimeSeries, employment: TimeSeries) -> LaborMarketResult:
+def analyze_labor_market(
+    labor_force: TimeSeries,
+    employment: TimeSeries,
+    *,
+    unemployment_name: str | None = None,
+    unemployment_rate_name: str | None = None,
+) -> LaborMarketResult:
     """Derive unemployment levels and rates from labour force and employment."""
     labor_force.require_aligned(employment)
     if any(value is not None and value <= 0 for value in labor_force.values):
@@ -119,9 +128,16 @@ def analyze_labor_market(labor_force: TimeSeries, employment: TimeSeries) -> Lab
             count = force - employed
             unemployed.append(count)
             rates.append(100 * count / force)
-    unemployment = labor_force.with_values(tuple(unemployed), name="Unemployment", index_base=None)
+    unemployment = labor_force.with_values(
+        tuple(unemployed),
+        name=unemployment_name or text("series.unemployment"),
+        index_base=None,
+    )
     unemployment_rate = labor_force.with_values(
-        tuple(rates), name="Unemployment rate", unit="percent", index_base=None
+        tuple(rates),
+        name=unemployment_rate_name or text("series.unemployment_rate"),
+        unit=text("unit.percent"),
+        index_base=None,
     )
     return LaborMarketResult(
         labor_force=labor_force,

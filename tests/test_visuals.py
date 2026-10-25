@@ -42,14 +42,19 @@ def layer_ids(canvas: object) -> set[str]:
     return {layer.id for layer in canvas.snapshot().layers}  # type: ignore[attr-defined]
 
 
+def text_of(canvas: object, layer_id: str) -> object:
+    layer = next(item for item in canvas.snapshot().layers if item.id == layer_id)  # type: ignore[attr-defined]
+    return layer.text
+
+
 def test_gdp_decomposition_has_stable_namespaced_ids_and_optional_title() -> None:
     result = analyze_gdp_components(GDPComponents(60, 20, 25, -5, "billions"))
 
     untitled = gdp_decomposition_canvas(result)
     titled = gdp_decomposition_canvas(result, title="GDP components")
 
-    assert untitled.spec.title is None
-    assert titled.spec.title == "GDP components"
+    assert "macro.title" not in layer_ids(untitled)
+    assert text_of(titled, "macro.title") == "GDP components"
     assert {
         "macro.accounts.gdp.component.consumption",
         "macro.accounts.gdp.component.investment",
@@ -57,19 +62,15 @@ def test_gdp_decomposition_has_stable_namespaced_ids_and_optional_title() -> Non
         "macro.accounts.gdp.component.net_exports",
         "macro.accounts.gdp.total",
     } <= layer_ids(untitled)
-    assert all(
-        layer.id == "axes.frame" or layer.id.startswith("macro.")
-        for layer in untitled.snapshot().layers
-    )
-    assert "macro.axis.value.0" in layer_ids(untitled)
+    assert all(layer.id.startswith(("axes.", "macro.")) for layer in untitled.snapshot().layers)
+    assert not any(layer_id.startswith("macro.axis.value") for layer_id in layer_ids(untitled))
     net_exports_label = next(
         layer
         for layer in untitled.snapshot().layers
         if layer.id == "macro.accounts.gdp.component.net_exports.label"
     )
     assert isinstance(net_exports_label, TextLayer)
-    assert net_exports_label.nudge is not None
-    assert net_exports_label.nudge.dy < 0
+    assert net_exports_label.anchor == "bottom"
 
 
 def test_account_series_visuals_expose_each_economic_series() -> None:
@@ -88,17 +89,15 @@ def test_account_series_visuals_expose_each_economic_series() -> None:
         "macro.accounts.gdp.real",
     } <= layer_ids(gdp_levels_canvas(gdp))
     assert "macro.axis.value.0" in layer_ids(gdp_levels_canvas(gdp))
-    assert {
-        "macro.axis.date.label",
-        "macro.axis.unit.label",
-    } <= layer_ids(gdp_levels_canvas(gdp))
+    assert {"axes.x", "axes.y", "axes.y.label"} <= layer_ids(gdp_levels_canvas(gdp))
+    assert "axes.x.label" not in layer_ids(gdp_levels_canvas(gdp))
     assert "macro.accounts.price.index" in layer_ids(gdp_deflator_canvas(gdp))
     assert "macro.accounts.price.index" in layer_ids(price_index_canvas(cpi))
     assert "macro.accounts.inflation.rate" in layer_ids(inflation_canvas(inflation))
-    assert {
-        "macro.accounts.labor.employment",
-        "macro.accounts.labor.unemployment",
-    } <= layer_ids(labor_market_canvas(labor))
+    panels = labor_market_canvas(labor).placements
+    assert len(panels) == 2
+    assert "macro.accounts.labor.employment" in layer_ids(panels[0].canvas)
+    assert "macro.accounts.labor.unemployment" in layer_ids(panels[1].canvas)
     assert "macro.accounts.labor.unemployment.rate" in layer_ids(unemployment_rate_canvas(labor))
 
 
@@ -114,7 +113,7 @@ def test_business_cycle_visual_has_recession_turning_and_gap_layers() -> None:
     cycle = business_cycle_canvas(result, title="Business cycle")
     gap = output_gap_canvas(result)
 
-    assert cycle.spec.title == "Business cycle"
+    assert text_of(cycle, "macro.title") == "Business cycle"
     assert {
         "macro.cycles.output",
         "macro.cycles.trend",
@@ -122,17 +121,6 @@ def test_business_cycle_visual_has_recession_turning_and_gap_layers() -> None:
         "macro.cycles.peak.0",
         "macro.cycles.trough.0",
     } <= layer_ids(cycle)
-    output_label = next(
-        layer for layer in cycle.snapshot().layers if layer.id == "macro.cycles.output.label"
-    )
-    trend_label = next(
-        layer for layer in cycle.snapshot().layers if layer.id == "macro.cycles.trend.label"
-    )
-    assert isinstance(output_label, TextLayer)
-    assert isinstance(trend_label, TextLayer)
-    assert output_label.nudge is not None
-    assert trend_label.nudge is not None
-    assert trend_label.nudge.dy < 0 < output_label.nudge.dy
     assert isinstance(
         next(layer for layer in cycle.snapshot().layers if layer.id == "macro.cycles.recession.0"),
         FillLayer,
@@ -144,7 +132,7 @@ def test_business_cycle_visual_has_recession_turning_and_gap_layers() -> None:
     assert {
         "macro.cycles.output.gap.positive.1",
         "macro.cycles.output.gap.negative.2",
-        "macro.cycles.output.gap.zero",
+        "macro.axis.zero",
     } <= layer_ids(gap)
 
 

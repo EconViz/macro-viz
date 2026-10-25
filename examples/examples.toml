@@ -1,0 +1,45 @@
+# Sample data and titles of the example figures. The scripts read everything from here.
+
+[gdp_components]
+title = "GDP expenditure components"
+unit = "billions USD"
+consumption = 620
+investment = 170
+government = 230
+net_exports = -20
+
+[gdp_and_prices]
+start_year = 2019
+unit = "billions USD"
+index_unit = "index"
+nominal_name = "Nominal GDP"
+nominal = [1000, 1040, 1113, 1196, 1275, 1365]
+real_name = "Real GDP"
+real = [1000, 1010, 1060, 1100, 1140, 1180]
+cpi_name = "CPI"
+cpi = [100, 102, 105, 109, 113, 116]
+title_levels = "Nominal and real GDP"
+title_deflator = "GDP deflator"
+title_cpi = "Consumer price index"
+title_inflation = "CPI inflation"
+
+[labor_market]
+start_year = 2019
+unit = "millions of people"
+labor_force_name = "Labor force"
+labor_force = [165, 166, 167, 169, 171, 173]
+employment_name = "Employment"
+employment = [158, 157, 159, 162, 165, 168]
+title_levels = "Employment and unemployment"
+title_rate = "Unemployment rate"
+
+[business_cycle]
+start_year = 2016
+unit = "billions USD"
+output_name = "Real GDP"
+output = [980, 1010, 1045, 1080, 1030, 1095, 1140, 1125, 1180]
+trend_name = "Potential GDP"
+trend = [985, 1010, 1035, 1060, 1085, 1110, 1135, 1160, 1185]
+recession_years = [[2020, 2020]]
+title_cycle = "Business cycle"
+title_gap = "Output gap"

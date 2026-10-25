@@ -2,38 +2,31 @@
 
 from __future__ import annotations
 
+from collections.abc import Sequence
 from datetime import date
 
-from common import prepare_manual_output
+from common import load_example, setup
 
 from macro_viz import TimeSeries
 from macro_viz.cycles import RecessionPeriod, analyze_business_cycle
 from macro_viz.visuals import business_cycle_canvas, output_gap_canvas
 
 
-def main() -> None:
-    output = prepare_manual_output()
-    dates = tuple(date(year, 1, 1) for year in range(2016, 2025))
-    actual = TimeSeries(
-        "Real GDP",
-        dates,
-        (980, 1010, 1045, 1080, 1030, 1095, 1140, 1125, 1180),
-        "billions USD",
+def main(argv: Sequence[str] | None = None) -> None:
+    args, output = setup(__doc__ or "", argv)
+    data = load_example(args.data, "business_cycle")
+    dates = tuple(date(data["start_year"] + k, 1, 1) for k in range(len(data["output"])))
+    actual = TimeSeries(data["output_name"], dates, tuple(data["output"]), data["unit"])
+    potential = TimeSeries(data["trend_name"], dates, tuple(data["trend"]), data["unit"])
+    recessions = tuple(
+        RecessionPeriod(date(start, 1, 1), date(end, 1, 1))
+        for start, end in data["recession_years"]
     )
-    potential = TimeSeries(
-        "Potential GDP",
-        dates,
-        (985, 1010, 1035, 1060, 1085, 1110, 1135, 1160, 1185),
-        "billions USD",
+    result = analyze_business_cycle(actual, trend=potential, recessions=recessions)
+    business_cycle_canvas(result, title=data["title_cycle"]).save(
+        output / f"business_cycle{args.suffix}"
     )
-    result = analyze_business_cycle(
-        actual,
-        trend=potential,
-        recessions=(RecessionPeriod(dates[4], dates[4]),),
-    )
-
-    business_cycle_canvas(result, title="Business cycle").save(output / "business_cycle.png")
-    output_gap_canvas(result, title="Output gap").save(output / "output_gap.png")
+    output_gap_canvas(result, title=data["title_gap"]).save(output / f"output_gap{args.suffix}")
 
 
 if __name__ == "__main__":
