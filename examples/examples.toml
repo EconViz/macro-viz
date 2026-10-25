@@ -199,3 +199,8 @@ money_after = 35
 devaluation = 0.4
 exchange_effect = 50
 autonomous_slump = 35
+
+# Animation of the linked panels: one frame per step shown, and the seconds each is held.
+[panels_animation]
+fps = 1
+dpi = 60

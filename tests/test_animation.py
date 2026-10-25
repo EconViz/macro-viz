@@ -80,6 +80,36 @@ def test_gif_has_one_frame_per_value(tmp_path: Path) -> None:
         assert getattr(image, "n_frames", 0) == 4
 
 
+def test_gif_animates_linked_panels(tmp_path: Path) -> None:
+    pytest.importorskip("kinetickit")
+    from PIL import Image
+
+    from macro_viz.animation import save_gif
+    from macro_viz.panels import (
+        LinearFunction,
+        MacroEconomy,
+        QuadraticProduction,
+        Scenario,
+        Shock,
+        Step,
+    )
+    from macro_viz.visuals import four_panel_canvas
+
+    economy = MacroEconomy(QuadraticProduction(3.0, 0.2, 1.0), LinearFunction(0.4, 0.25), 1.0, 1.0)
+    scenario = Scenario(
+        economy, (Step("A", price=1.0), Step("C", Shock(expected_price=1.6), price=1.6))
+    )
+    labels = ["A", "C"]
+
+    def reveal(value: float):  # type: ignore[no-untyped-def]
+        return four_panel_canvas(scenario, steps=labels[: round(value)], lras=True, ad=False)
+
+    target = save_gif(reveal, [1, 2], tmp_path / "panels.gif", dpi=40)
+
+    with Image.open(target) as image:
+        assert getattr(image, "n_frames", 0) == 2
+
+
 def _font_files() -> list[str]:
     from matplotlib import get_data_path
 
