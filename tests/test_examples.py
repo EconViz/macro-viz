@@ -16,9 +16,16 @@ def test_all_examples_execute_and_write_nonempty_images(tmp_path: Path) -> None:
         text=True,
     )
 
-    images = tuple(tmp_path.glob("*.svg"))
-    assert len(images) == 9
-    assert all(image.stat().st_size > 0 for image in images)
+    images = {image.stem: image for image in tmp_path.glob("*.svg")}
+    assert {
+        "gdp_components",
+        "business_cycle",
+        "keynesian_cross",
+        "keynesian_cross_curved",
+        "multiplier",
+        "consumption_function",
+    } <= set(images)
+    assert all(image.stat().st_size > 0 for image in images.values())
 
 
 def test_example_output_follows_the_arguments(tmp_path: Path) -> None:

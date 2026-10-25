@@ -450,6 +450,29 @@ wheels = [
 ]
 
 [[package]]
+name = "kinetickit"
+version = "1.0.0b2"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "glyphkit" },
+    { name = "numpy", version = "2.2.6", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.11'" },
+    { name = "numpy", version = "2.4.6", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version == '3.11.*'" },
+    { name = "numpy", version = "2.5.4", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.12'" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/59/a2/fd296fc82b22cce5527d700ae126f08fea032a8bf95432973013d4d80b83/kinetickit-1.0.0b2.tar.gz", hash = "sha256:a5a5b8e507907a39af695f7c5300e8f0f5c714e0160b4d943f4e6ed10f26ed1f", size = 190540, upload-time = "2026-10-19T14:39:27.574Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/29/92/165c82be6ac166654d74835a142d983e5214d8c09fe220bc828be6f841c6/kinetickit-1.0.0b2-py3-none-any.whl", hash = "sha256:e3ffe5221fe77789ad4330d878aea53ad7148697fdf0fe2b120e6b6c3aeb0004", size = 169691, upload-time = "2026-10-19T14:39:25.934Z" },
+]
+
+[package.optional-dependencies]
+raster = [
+    { name = "matplotlib", version = "3.10.9", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.11'" },
+    { name = "matplotlib", version = "3.11.2", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.11'" },
+    { name = "pillow", version = "12.3.0", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.11'" },
+    { name = "pillow", version = "13.0.0", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.11'" },
+]
+
+[[package]]
 name = "kiwisolver"
 version = "1.5.1"
 source = { registry = "https://pypi.org/simple" }
@@ -735,6 +758,11 @@ dependencies = [
     { name = "mosaickit" },
 ]
 
+[package.optional-dependencies]
+animation = [
+    { name = "kinetickit", extra = ["raster"] },
+]
+
 [package.dev-dependencies]
 dev = [
     { name = "mypy" },
@@ -743,7 +771,11 @@ dev = [
 ]
 
 [package.metadata]
-requires-dist = [{ name = "mosaickit", specifier = ">=1.0.0rc9,<2" }]
+requires-dist = [
+    { name = "kinetickit", extras = ["raster"], marker = "extra == 'animation'", specifier = ">=1.0.0b2,<2.0.0" },
+    { name = "mosaickit", specifier = ">=1.0.0rc9,<2" },
+]
+provides-extras = ["animation"]
 
 [package.metadata.requires-dev]
 dev = [

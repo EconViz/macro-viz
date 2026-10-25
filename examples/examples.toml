@@ -57,3 +57,9 @@ curve_intercept = 40
 curve_slope = 0.5
 curve_bend = 0.0008
 curve_upper = 400
+
+[keynesian_animation]
+frames = 6
+step_seconds = 0.6
+fps = 10
+dpi = 100

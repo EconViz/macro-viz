@@ -69,10 +69,7 @@ def test_the_demand_path_lies_on_the_demand_function() -> None:
     demand = layers(keynesian_cross_canvas(model()))["macro.keynesian.demand"]
 
     assert isinstance(demand, PathLayer)
-    assert all(
-        z == pytest.approx(model().demand(y))
-        for y, z in demand.path
-    )
+    assert all(z == pytest.approx(model().demand(y)) for y, z in demand.path)
 
 
 def test_curved_demand_draws_a_curve_without_the_autonomous_brace() -> None:
@@ -86,8 +83,7 @@ def test_curved_demand_draws_a_curve_without_the_autonomous_brace() -> None:
     demand = found["macro.keynesian.demand"]
     assert isinstance(demand, PathLayer)
     slopes = [
-        (b[1] - a[1]) / (b[0] - a[0])
-        for a, b in zip(demand.path, demand.path[1:], strict=False)
+        (b[1] - a[1]) / (b[0] - a[0]) for a, b in zip(demand.path, demand.path[1:], strict=False)
     ]
     assert slopes[-1] > slopes[0]
 
