@@ -5,12 +5,15 @@ from __future__ import annotations
 from typing import Any
 
 from macro_viz.panels import (
+    Curve,
     IsLm,
     IsLmSketch,
     LinearFunction,
     MacroEconomy,
     QuadraticProduction,
+    RotationDirection,
     Scenario,
+    ShiftDirection,
     Shock,
     Step,
 )
@@ -62,17 +65,21 @@ def money_illusion(data: dict[str, Any]) -> Scenario:
 
 
 def capital(data: dict[str, Any]) -> Scenario:
-    """Capital increases (A to B at the old price), then the price falls (C)."""
+    """User-selected outward rotations raise capacity; the model solves the shared points."""
     table = data["capital"]
-    base = economy(data)
-    shock = Shock(capital=table["capital_after"])
+    base = economy(data, islm=data["islm"])
+    movements = (
+        base.curve(Curve.PRODUCTION).rotate(RotationDirection.OUTWARD),
+        base.curve(Curve.LABOR_DEMAND).rotate(RotationDirection.OUTWARD),
+        base.curve(Curve.LM).shift(ShiftDirection.RIGHT),
+    )
     sketch = IsLmSketch(("A", "C"), table["rate"], table["is_slope"], table["lm_slope"])
     return Scenario(
         base,
         (
             Step("A", price=base.expected_price),
-            Step("B", shock, price=base.expected_price),
-            Step("C", shock, price=table["price_after"]),
+            Step("B", price=base.expected_price, movements=movements),
+            Step("C", price=table["price_after"], movements=movements),
         ),
         sketch,
     )

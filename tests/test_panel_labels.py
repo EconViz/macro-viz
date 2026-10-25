@@ -94,7 +94,11 @@ def collisions(grid: CanvasGrid) -> list[str]:
             for artist in ax.get_children():
                 gid = artist.get_gid() or ""
                 if isinstance(artist, Text) and _is_label(gid) and gid.endswith(".label"):
-                    labels[gid] = artist.get_window_extent(renderer)
+                    bounds = artist.get_window_extent(renderer)
+                    # GlyphKit leaves a one-pixel Matplotlib text placeholder when it draws the
+                    # real label as glyph paths.  It is not visible and has no usable text box.
+                    if bounds.width > 1 or bounds.height > 1:
+                        labels[gid] = bounds
                 elif isinstance(artist, Text) and ".tick." in gid:
                     labels[gid] = artist.get_window_extent(renderer)
                 elif isinstance(artist, PathPatch) and not gid.endswith(".leader"):

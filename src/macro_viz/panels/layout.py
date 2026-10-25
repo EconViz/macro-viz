@@ -161,7 +161,7 @@ def four_panel_layout() -> PanelLayout:
         Projection(
             Y,
             _paths(
-                (Hop("production", None, Y), Hop("diagonal", None, Y), Hop("diagonal", Y, Y)),
+                (Hop("production", N, Y), Hop("diagonal", None, Y), Hop("diagonal", Y, Y)),
                 (Hop("diagonal", Y, Y), Hop("adas", Y, None, True), Hop("adas", Y, P)),
             ),
         ),
@@ -177,12 +177,12 @@ def four_panel_layout() -> PanelLayout:
 
 
 def five_panel_layout(
-    *, islm_rows: int = 2, adas_rows: int = 2, labor_rows: int = 3, lower_rows: int = 3
+    *, islm_rows: int = 3, adas_rows: int = 3, labor_rows: int = 3, lower_rows: int = 3
 ) -> PanelLayout:
     """The four panels with IS-LM above AD-AS, so the right column shares one ``Y`` axis.
 
-    The row spans (grid units) set how flat each panel is; the lower panels are square.
-    The grid has an empty cell above the labour market.
+    The row spans (grid units) may be overridden together, but default to equal-sized axes in
+    every panel.  The grid has an empty cell above the labour market.
     """
     top = islm_rows
     middle = max(adas_rows, labor_rows)

@@ -36,7 +36,7 @@ widths, colours, and fonts come from the theme and the settings below.
 change, and the rounds of the multiplier process. The builders `consumption_function_canvas`,
 `keynesian_cross_canvas`, and `multiplier_canvas` draw them with arrowed axes, direct curve names,
 dotted guides to marks on the axes, an old position that stays heavy and a new one that is thin
-and dashed. Every text is a label id of the locale table and can be replaced through `labels=`;
+and solid. Every text is a label id of the locale table and can be replaced through `labels=`;
 the axes follow the model (`x_max` and `extent` change them).
 
 ## Money market
@@ -45,7 +45,7 @@ the axes follow the model (`x_max` and `extent` change them).
 decreasing `L`), `MoneyMarket(demand, supply)` whose `equilibrium()` solves `$Y L(i) = M` for the
 interest rate, and `analyze_income_shift` / `analyze_supply_shift`, which return the baseline and
 post-change markets with the direction of the rate and of the money stock. `money_market_canvas`
-draws the market (and, given a shift, the old position heavy, the new one thin and dashed, A and
+draws the market (and, given a shift, the old position heavy, the new one thin and solid, A and
 A', and an arrow); `money_demand_canvas` shows the demand curve before and after a change in
 nominal income at one interest rate.
 
@@ -98,8 +98,33 @@ AS-AD functions.
 `four_panel_canvas(scenario)` draws the labour market, AD-AS, the production function and the
 45-degree line on one grid; `five_panel_canvas(scenario)` adds IS-LM above AD-AS so the right
 column shares one `Y` axis. A `Scenario` is a baseline `MacroEconomy` and labelled `Step`s (`A`, `B`,
-`C`), each a `Shock` of parameters (capital, money, expenditure, expected price) at a given or
-market-clearing price level. Equations (documented in `macro_viz.panels.model`):
+`C`). A step label is exactly one ASCII letter. Users select curve movements directly; macro-viz
+does not infer them from an event or policy name. The built-in schematic preset makes those
+directions visible, solves the shared equilibrium, and keeps every panel consistent:
+
+```python
+from macro_viz.panels import Curve, RotationDirection, Scenario, ShiftDirection, Step
+from macro_viz.visuals import five_panel_canvas
+
+movements = (
+    economy.curve(Curve.PRODUCTION).rotate(RotationDirection.OUTWARD),
+    economy.curve(Curve.LABOR_DEMAND).rotate(RotationDirection.OUTWARD),
+    economy.curve(Curve.LM).shift(ShiftDirection.RIGHT),
+)
+scenario = Scenario(
+    economy,
+    (
+        Step("A", price=1.0),
+        Step("B", price=1.0, movements=movements),
+        Step("C", price=0.8, movements=movements),
+    ),
+)
+five_panel_canvas(scenario).save("reshoring.svg")
+```
+
+The caller is responsible for the economic interpretation. Translation directions are `LEFT`,
+`RIGHT`, `UP`, and `DOWN`; rotations are `INWARD` and `OUTWARD`. A movement has a fixed textbook
+display magnitude, not an empirical size. Equations (documented in `macro_viz.panels.model`):
 
 ```text
 W = p f(N, K)     labour demand          W = pe h(N)      labour supply
@@ -214,10 +239,10 @@ domain model -> analysis -> typed result -> visual builder -> MosaicKit layers
 Domain and analysis modules remain renderer-neutral. Visual builders use public MosaicKit scenes
 and layers rather than importing Matplotlib or implementing a separate drawing layer.
 
-`mosaickit` is the only direct graphics dependency. `kinetickit[raster]` is the optional
+`mosaickit` is the drawing dependency and `bezierkit` constructs rotation markers.
+`kinetickit[raster]` is the optional
 `macro-viz[animation]` extra, following utility-viz's dependency boundary; text support supplied
-by `glyphkit` arrives through MosaicKit and KineticKit. `bezierkit` will become a direct dependency
-only when a real macroeconomic curve-geometry feature needs it.
+by `glyphkit` arrives through MosaicKit and KineticKit.
 
 ## Installation
 

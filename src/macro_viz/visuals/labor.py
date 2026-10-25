@@ -72,7 +72,7 @@ def wsps_canvas(
     By default the horizontal axis is the unemployment rate ``u`` (WS falls, PS is flat). With
     ``labor_force`` the axis is employment ``N = L (1 - u)``: WS rises, and braces under the axis
     show employment ``N`` and unemployment ``U`` up to ``L``. Given a ``WagePriceShift`` the
-    moved curves are thin and dashed, the new crossing is A', and curved arrows show the shifts.
+    moved curves are thin and solid, the new crossing is A', and straight arrows show the shifts.
     """
     shift = subject if isinstance(subject, WagePriceShift) else None
     model = shift.baseline if shift is not None else subject
@@ -146,27 +146,15 @@ def _shift_layers(
 ) -> list[Layer]:
     base, post = shift.baseline, shift.post
     layers: list[Layer] = []
-    u = ARROW_SHARE * rates
+    u = base.natural_rate()
     x = _x(base, u, labor_force)
-    for name, before, after, changed in (
-        (
-            "ws",
-            base.wage_setting(u),
-            post.wage_setting(u),
-            post.wage_setting(u) != base.wage_setting(u),
-        ),
-        ("ps", base.price_setting, post.price_setting, post.price_setting != base.price_setting),
+    start = (x, base.real_wage())
+    for name, after, changed in (
+        ("ws", post.wage_setting(u), post.wage_setting(u) != base.wage_setting(u)),
+        ("ps", post.price_setting, post.price_setting != base.price_setting),
     ):
         if changed:
-            layers.append(
-                shift_arrow(
-                    (x, before),
-                    (x, after),
-                    layer_id=f"macro.labor.shift.{name}",
-                    extent=(right, top),
-                    bend="right",
-                )
-            )
+            layers.append(shift_arrow(start, (x, after), layer_id=f"macro.labor.shift.{name}"))
     end = (_x(post, post.natural_rate(), labor_force), post.real_wage())
     employment_axis = labor_force is not None
     same_rate = abs(shift.after - shift.before) < 1e-12

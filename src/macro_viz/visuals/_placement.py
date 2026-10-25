@@ -19,6 +19,8 @@ Box = tuple[float, float, float, float]
 """``(x0, y0, x1, y1)`` in points."""
 
 MARKUP = re.compile(r"[$\\{}^_,]")
+LAYOUT_COMMAND = re.compile(r"\\(?:left|right|d?frac)")
+SYMBOL_COMMAND = re.compile(r"\\[A-Za-z]+")
 
 
 @dataclass(frozen=True, slots=True)
@@ -67,7 +69,9 @@ class Scene:
 
 def text_box(text: str, size: float, o: PlacementOptions) -> tuple[float, float]:
     """Estimated ``(width, height)`` in points of ``text`` set at ``size`` points."""
-    glyphs = len(MARKUP.sub("", text))
+    plain = LAYOUT_COMMAND.sub("", text)
+    plain = SYMBOL_COMMAND.sub("x", plain)
+    glyphs = len(MARKUP.sub("", plain))
     return o.character_width * size * glyphs, o.line_height * size
 
 

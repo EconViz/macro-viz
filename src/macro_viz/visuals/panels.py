@@ -10,10 +10,13 @@ the locale table.
 
 from __future__ import annotations
 
+from collections import defaultdict
 from collections.abc import Callable, Collection, Mapping, Sequence
 from dataclasses import dataclass
 from typing import Any
 
+from bezierkit import Point as BezierPoint
+from bezierkit.construction import RotationConnector
 from mosaickit import (
     ArrowPlacement,
     ArrowStyle,
@@ -27,6 +30,7 @@ from mosaickit import (
     TextLayer,
 )
 from mosaickit.canvas.grid_link import GridLink
+from mosaickit.layout import Rect, place_rotation_marker
 
 from macro_viz.config import active_config
 from macro_viz.errors import ValidationError
@@ -50,6 +54,7 @@ from macro_viz.panels.arrows import ShiftArrow
 from macro_viz.panels.curves import DEFAULT_SAMPLES, KEY_DIGITS, CurveSpec, Subscripted
 from macro_viz.panels.layout import DIAGONAL, X_AXIS
 from macro_viz.panels.model import N, P, R, W, Y
+from macro_viz.panels.movement import MovementKind
 from macro_viz.visuals._kit import axes_layers, canvas_spec, new_canvas
 from macro_viz.visuals._placement import (
     CURVE_ORDER,
@@ -58,6 +63,7 @@ from macro_viz.visuals._placement import (
     Placed,
     PlacementOptions,
     Scene,
+    is_free,
     place,
     text_box,
 )
@@ -92,6 +98,9 @@ TICK_CLEARANCE = 0.1
 LABEL_GAP = 0.13
 """How much of a panel's height a dashed path stops short of a tick label under an axis."""
 
+UPPER_RIGHT_TAIL_LABELS = frozenset(("lm", "sras"))
+"""Curve families whose names stay directly above-right of their upper-right endpoint."""
+
 SYMBOL_IDS = {
     N: "panels.var.employment",
     W: "panels.var.wage",
@@ -110,6 +119,84 @@ DIAGONAL_REACH = 0.97
 """The share of the axis the 45-degree line runs before its arrowhead."""
 
 ARROW = Stroke(arrow=ArrowStyle.TRIANGLE)
+
+ROTATION_SAMPLES = 48
+"""Sampling resolution for a Bézier marker; placement and curvature do not depend on it."""
+
+
+def _normalise_path(
+    points: Sequence[tuple[float, float]], extent: tuple[float, float]
+) -> tuple[tuple[float, float], ...]:
+    return tuple((x / extent[0], y / extent[1]) for x, y in points)
+
+
+def _line_intersection(
+    first: CurveSpec, second: CurveSpec, extent: tuple[float, float]
+) -> tuple[float, float]:
+    """Intersection of two curve endpoint chords in normalised panel coordinates."""
+    a, b = _normalise_path((first.points[0], first.points[-1]), extent)
+    c, d = _normalise_path((second.points[0], second.points[-1]), extent)
+    ab = (b[0] - a[0], b[1] - a[1])
+    cd = (d[0] - c[0], d[1] - c[1])
+    denominator = ab[0] * cd[1] - ab[1] * cd[0]
+    if abs(denominator) < 1e-12:
+        raise ValidationError("rotation curves must have a common finite pivot")
+    offset = (c[0] - a[0], c[1] - a[1])
+    share = (offset[0] * cd[1] - offset[1] * cd[0]) / denominator
+    return a[0] + share * ab[0], a[1] + share * ab[1]
+
+
+def _rotation_connector(
+    start: tuple[float, float], end: tuple[float, float], pivot: tuple[float, float]
+) -> tuple[tuple[float, float], ...]:
+    curve = RotationConnector(BezierPoint(*start), BezierPoint(*end), BezierPoint(*pivot)).build()
+    parameters = [index / (ROTATION_SAMPLES - 1) for index in range(ROTATION_SAMPLES)]
+    return tuple(tuple(point.coords) for point in curve.at_many(parameters))  # type: ignore[misc]
+
+
+def _rotation_arrows(
+    panel: PanelSpec,
+    curves: Sequence[CurveSpec],
+    lengths: Mapping[str, float],
+    kinds: Mapping[str, MovementKind],
+    options: ArrowOptions,
+) -> list[ShiftArrow]:
+    """Place typed rotation markers in the visual layer using display-neutral geometry."""
+    extent = lengths[panel.x], lengths[panel.y]
+    families: dict[str, list[CurveSpec]] = defaultdict(list)
+    for curve in curves:
+        if kinds.get(curve.family) is MovementKind.ROTATION:
+            families[curve.family].append(curve)
+
+    arrows = []
+    for family, members in families.items():
+        accepted: list[tuple[tuple[float, float], ...]] = []
+        for old, new in zip(members, members[1:], strict=False):
+            old_path = _normalise_path(old.points, extent)
+            new_path = _normalise_path(new.points, extent)
+            if family == "production":
+                pivot = (0.0, 0.0)
+                old_path = (pivot, *old_path)
+                new_path = (pivot, *new_path)
+            else:
+                pivot = _line_intersection(old, new, extent)
+            placement = place_rotation_marker(
+                old_path,
+                new_path,
+                pivot,
+                Rect(0.0, 0.0, 1.0, 1.0),
+                _rotation_connector,
+                accepted=accepted,
+                clearance=options.rotation_clearance,
+                search_step=options.rotation_search_step,
+                minimum_span=options.rotation_clearance,
+            )
+            if placement is None:
+                raise ValidationError(f"could not place a rotation marker for {family}")
+            accepted.append(placement.path)
+            points = tuple((x * extent[0], y * extent[1]) for x, y in placement.path)
+            arrows.append(ShiftArrow(panel.key, family, points))
+    return arrows
 
 
 @dataclass(frozen=True, slots=True)
@@ -450,6 +537,32 @@ def _axes_size_pt(
     return (w * POINTS_PER_INCH, h * POINTS_PER_INCH)
 
 
+def _upper_right_of_tail(
+    anchor: tuple[float, float],
+    size: tuple[float, float],
+    scene: Scene,
+    options: PlacementOptions,
+) -> Placed:
+    """Place a curve name above-right of its tail, moving farther right until unobstructed."""
+    base = options.gap * 0.75
+    unbounded = Scene(
+        segments=scene.segments,
+        boxes=scene.boxes,
+        dots=scene.dots,
+        limits=(-float("inf"), -float("inf"), float("inf"), float("inf")),
+        dot_radius=scene.dot_radius,
+    )
+    for ring in range(32):
+        x_gap = base + ring * options.step
+        y_gap = base + ring * options.step * 0.25
+        position = (anchor[0] + x_gap, anchor[1] + y_gap)
+        box = (position[0], position[1], position[0] + size[0], position[1] + size[1])
+        candidate = Placed(box, "bottom-left", position, None)
+        if is_free(box, unbounded, options, ignore=(anchor,)):
+            return candidate
+    raise ValidationError("could not place a curve label above-right of its tail")
+
+
 def _panel_canvas(
     ctx: _Context,
     panel: PanelSpec,
@@ -590,8 +703,13 @@ def _panel_canvas(
         fields = {name: ctx.subscripted(value) for name, value in curve.fields.items()}
         label = ctx.labels(curve.label_id, **fields)
         size = text_box(label, text_size, placement)
+        if "\\frac" in label:
+            size = (size[0] * 1.3, size[1] * 3.0)
         anchor = pt(curve.end)
-        placed = place(anchor, size, scene, placement, CURVE_ORDER)
+        if curve.family in UPPER_RIGHT_TAIL_LABELS:
+            placed = _upper_right_of_tail(anchor, size, scene, placement)
+        else:
+            placed = place(anchor, size, scene, placement, CURVE_ORDER)
         put(f"{base}.label", role, label, placed, text_size)
     for number, arrow in enumerate(arrows):
         canvas.add(
@@ -686,6 +804,7 @@ def linked_panels_canvas(
         mode=mode, samples=samples, sras=sras, shifted_sras=shifted_sras, lras=lras, ad=ad
     )
     arrow_options = shift_arrows_on if isinstance(shift_arrows_on, ArrowOptions) else ArrowOptions()
+    movement_kinds = scenario.movement_kinds()
     ticks, drawn = _ticks(ctx, hide_ticks)
     height = _unit_height(layout, width, column_gap, row_gap, outer, _aspect(ctx, layout))
     placed = sorted(layout.panels, key=lambda panel: (panel.row, panel.col))
@@ -704,10 +823,21 @@ def linked_panels_canvas(
     for index, panel in enumerate(placed):
         curves = curve_specs(panel, scenario, states, lengths, options)
         arrows = (
-            shift_arrows(panel, curves, states, dict(lengths.lengths), arrow_options)
+            shift_arrows(
+                panel,
+                curves,
+                states,
+                dict(lengths.lengths),
+                arrow_options,
+                movement_kinds,
+            )
             if shift_arrows_on is not False
             else []
         )
+        if shift_arrows_on is not False:
+            arrows += _rotation_arrows(
+                panel, curves, lengths.lengths, movement_kinds, arrow_options
+            )
         canvases[panel.key] = _panel_canvas(
             ctx,
             panel,
@@ -757,8 +887,8 @@ def four_panel_canvas(scenario: Scenario, **options: object) -> CanvasGrid:
 def five_panel_canvas(
     scenario: Scenario,
     *,
-    islm_rows: int = 2,
-    adas_rows: int = 2,
+    islm_rows: int = 3,
+    adas_rows: int = 3,
     labor_rows: int = 3,
     lower_rows: int = 3,
     **options: object,

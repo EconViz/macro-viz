@@ -3,7 +3,7 @@
 Theory diagrams are drawn on a square canvas with arrowed axes from the origin and no tick
 numbers; economic values are named by marks on the axes joined to the figure by dotted guides.
 Curves are named directly at their right-hand end (no legend); an old position is thin and
-dashed. Every function returns public MosaicKit layers with stable ids.
+solid. Every function returns public MosaicKit layers with stable ids.
 """
 
 from __future__ import annotations
@@ -11,6 +11,8 @@ from __future__ import annotations
 import string
 from collections.abc import Callable, Sequence
 
+from bezierkit import Point as BezierPoint
+from bezierkit.construction import RotationConnector
 from mosaickit import (
     ArrowLayer,
     ArrowStyle,
@@ -20,6 +22,7 @@ from mosaickit import (
     PathLayer,
     PointLabelLayer,
     Stroke,
+    TextLayer,
 )
 
 from macro_viz.errors import ValidationError
@@ -37,20 +40,14 @@ DEFAULT_SAMPLES = 60
 HEADROOM = 0.92
 """Share of an axis a curve may reach, leaving room for its name and the axis arrow."""
 
-SHIFT_BEND = "left"
-"""Default side to which a shift arrow bulges, seen from its start."""
-
-BULGE = 0.12
-"""Sideways displacement of a shift arrow's middle, as a share of its length."""
-
-ARC_SAMPLES = 16
-"""Points along a curved arrow."""
-
 PRIME = "'"
 """The mark appended to a point name for each step beyond the baseline."""
 
 EXTENT = 1.6
 """Default length of the horizontal axis as a multiple of the largest equilibrium value."""
+
+ROTATION_SAMPLES = 48
+"""Sampling resolution for BezierKit rotation markers."""
 
 
 def point_name(index: int, prime: int = 0) -> str:
@@ -169,14 +166,20 @@ def curve(
     label: str | None = None,
     z_index: int = 2,
 ) -> list[Layer]:
-    """A curve and, when ``label`` is given, its name beside the right-hand end."""
+    """A curve and, when ``label`` is given, its name at the right-hand end.
+
+    The name sits diagonally off the end, clear of every line (see ``MacroCanvas``).
+    """
     layers: list[Layer] = [PathLayer(tuple(points), id=layer_id, role=role, z_index=z_index)]
     if label:
         end = max(points, key=lambda point: (point[0], point[1]))
-        layers.append(
-            PointLabelLayer(end, label, id=f"{layer_id}.label", role=role, z_index=z_index + 5)
-        )
+        layers.append(_end_label(label, end, layer_id, role, z_index + 5))
     return layers
+
+
+def _end_label(label: str, end: Point, layer_id: str, role: str, z_index: int) -> TextLayer:
+    """The name of a curve at its end; ``MacroCanvas`` moves it to the first free diagonal."""
+    return TextLayer(end, label, id=f"{layer_id}.label", role=role, z_index=z_index)
 
 
 def guide(start: Point, end: Point, *, layer_id: str) -> PathLayer:
@@ -227,46 +230,49 @@ def drop_lines(
 
 
 def movement(start: Point, end: Point, *, layer_id: str) -> ArrowLayer:
-    """A thin dashed arrow showing how something moves."""
+    """A thin solid arrow showing how something moves."""
     return ArrowLayer(start, end, id=layer_id, role="macro.movement", z_index=5)
 
 
-def shift_arrow(
+def shift_arrow(start: Point, end: Point, *, layer_id: str) -> ArrowLayer:
+    """A straight arrow for a parallel shift.
+
+    It starts at the old equilibrium and ends on the new curve, so it is horizontal for a
+    sideways shift and vertical for a shift up or down.
+    """
+    return movement(start, end, layer_id=layer_id)
+
+
+def rotation_arrow(
     start: Point,
     end: Point,
     *,
+    pivot: Point,
     layer_id: str,
-    bend: str = SHIFT_BEND,
-    bulge: float = BULGE,
-    samples: int = ARC_SAMPLES,
     extent: Point = (1.0, 1.0),
 ) -> PathLayer:
-    """A thin curved arrow from ``start`` to ``end`` that bulges to ``bend`` (left or right).
+    """An angle-derived rotation arrow whose opening faces the vertical centreline.
 
-    ``left`` and ``right`` are seen walking from ``start`` to ``end``; ``bulge`` is the
-    sideways displacement of the middle as a share of the arrow's length, measured on the
-    page: ``extent`` is the length of the two axes, so a flat figure bends as a square one.
+    A marker left of the centreline bows left and therefore opens right; one on the right bows
+    right and opens left. ``extent`` normalises the two axes so the bend looks the same in flat
+    and square figures.
     """
-    if bend not in ("left", "right"):
-        raise ValidationError("bend must be 'left' or 'right'")
-    ex, ey = extent
-    dx, dy = (end[0] - start[0]) / ex, (end[1] - start[1]) / ey
-    side = 1.0 if bend == "left" else -1.0
-    control = (
-        (start[0] + end[0]) / 2 - side * dy * bulge * 2 * ex,
-        (start[1] + end[1]) / 2 + side * dx * bulge * 2 * ey,
+    if extent[0] <= 0 or extent[1] <= 0:
+        raise ValidationError("rotation arrow extent must be positive")
+    normalised_start = (start[0] / extent[0], start[1] / extent[1])
+    normalised_end = (end[0] / extent[0], end[1] / extent[1])
+    normalised_pivot = (pivot[0] / extent[0], pivot[1] / extent[1])
+    connector = RotationConnector(
+        BezierPoint(*normalised_start),
+        BezierPoint(*normalised_end),
+        BezierPoint(*normalised_pivot),
+    ).build()
+    parameters = [index / (ROTATION_SAMPLES - 1) for index in range(ROTATION_SAMPLES)]
+    points = tuple(
+        (point.x * extent[0], point.y * extent[1]) for point in connector.at_many(parameters)
     )
-    points = []
-    for k in range(samples):
-        t = k / (samples - 1)
-        points.append(
-            (
-                (1 - t) ** 2 * start[0] + 2 * (1 - t) * t * control[0] + t**2 * end[0],
-                (1 - t) ** 2 * start[1] + 2 * (1 - t) * t * control[1] + t**2 * end[1],
-            )
-        )
     return PathLayer(
-        tuple(points),
+        points,
         id=layer_id,
         role="macro.movement",
         stroke=Stroke(arrow=ArrowStyle.OPEN),
@@ -276,9 +282,20 @@ def shift_arrow(
 
 
 def movement_label(start: Point, end: Point, label: str, *, layer_id: str) -> list[Layer]:
-    """A curved shift arrow with its name placed beside its middle, covering nothing else."""
+    """A straight shift arrow with its name placed beside its middle, covering nothing else."""
     middle = ((start[0] + end[0]) / 2, (start[1] + end[1]) / 2)
+    horizontal = abs(end[0] - start[0]) >= abs(end[1] - start[1])
+    anchor = "bottom" if horizontal else "left"
+    offset = (0, 4) if horizontal else (4, 0)
     return [
         shift_arrow(start, end, layer_id=layer_id),
-        PointLabelLayer(middle, label, id=f"{layer_id}.label", role="macro.annotation", z_index=7),
+        TextLayer(
+            middle,
+            label,
+            id=f"{layer_id}.label",
+            role="macro.annotation",
+            anchor=anchor,
+            offset=offset,
+            z_index=7,
+        ),
     ]

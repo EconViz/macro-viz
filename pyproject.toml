@@ -18,7 +18,8 @@ classifiers = [
     "Typing :: Typed",
 ]
 dependencies = [
-    "mosaickit>=1.0.0rc9,<2",
+    "bezierkit>=1.1.1,<2",
+    "mosaickit>=1.0.0rc10,<2",
 ]
 
 [project.optional-dependencies]

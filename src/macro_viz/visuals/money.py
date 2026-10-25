@@ -72,7 +72,7 @@ def money_market_canvas(
     """Draw money demand, the money supply, and their crossing A.
 
     Given a ``MoneyMarketShift``, the moving curve is drawn twice (the old position heavy, the new
-    one thin and dashed), the new equilibrium is A', and an arrow shows the shift. ``x_max``
+    one thin and solid), the new equilibrium is A', and an arrow shows the shift. ``x_max``
     defaults to ``extent`` times the largest money supply drawn.
     """
     shift = market if isinstance(market, MoneyMarketShift) else None
@@ -136,7 +136,9 @@ def _shift_layers(
         if shift.curve is Curve.DEMAND
         else "macro.money.supply.shifted"
     )
-    rate = SHIFT_ARROW_RATE_SHARE * shift.baseline.demand.rate_max
+    old = shift.baseline.equilibrium()
+    # From the old equilibrium sideways to the moved curve; on the axis (rate zero) from the curve.
+    rate = old.rate if old.rate > 0 else SHIFT_ARROW_RATE_SHARE * shift.baseline.demand.rate_max
     if shift.curve is Curve.DEMAND:
         points = trim(demand_curve(post.demand, samples), limit, top)
         label = text("money.curve.demand_shifted")
@@ -151,7 +153,7 @@ def _shift_layers(
         role = "macro.curve.secondary.shifted"
         arrow = ((shift.baseline.supply, rate), (post.supply, rate))
     layers.extend(curve(points, layer_id=moved_id, role=role, label=label))
-    layers.append(shift_arrow(*arrow, layer_id="macro.money.shift", extent=(limit, top)))
+    layers.append(shift_arrow(*arrow, layer_id="macro.money.shift"))
     end = post.equilibrium()
     end_point = (end.money, end.rate)
     same = abs(end.money - shift.baseline.equilibrium().money) < SAME_MONEY
@@ -254,18 +256,7 @@ def money_demand_canvas(
         )
     )
     canvas.add(
-        shift_arrow(
-            (
-                before.quantity(SHIFT_ARROW_RATE_SHARE * before.rate_max),
-                SHIFT_ARROW_RATE_SHARE * before.rate_max,
-            ),
-            (
-                after.quantity(SHIFT_ARROW_RATE_SHARE * before.rate_max),
-                SHIFT_ARROW_RATE_SHARE * before.rate_max,
-            ),
-            layer_id="macro.money.shift",
-            extent=(limit, top),
-        )
+        shift_arrow((quantities[0], level), (quantities[1], level), layer_id="macro.money.shift")
     )
     return canvas
 
