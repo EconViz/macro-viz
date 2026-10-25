@@ -19,6 +19,7 @@ from macro_viz.visuals.keynesian import (
     consumption_function_canvas,
     keynesian_cross_canvas,
     multiplier_canvas,
+    open_goods_canvas,
 )
 from macro_viz.visuals.labor import wsps_canvas
 from macro_viz.visuals.money import (
@@ -51,4 +52,5 @@ __all__ = [
     "money_demand_canvas",
     "money_market_canvas",
     "multiplier_canvas",
+    "open_goods_canvas",
 ]

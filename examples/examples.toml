@@ -180,3 +180,9 @@ reserve_ratio = 0.1
 expected_inflation = 0.2
 expected_inflation_after = 0.3
 real_money_after = 40
+
+[open_economy]
+exports = 25
+import_propensity = 0.2
+government_after = 50
+exports_after = 40

@@ -123,6 +123,14 @@ labels.
 nominal rate (shifted by `b * pi_e`) and `islm_expectations_canvas` brackets the gap between the real
 and the nominal rate.
 
+## Open economy
+
+`macro_viz.open_economy.OpenEconomy` adds exports `X` and imports `m Y` to a `KeynesianCross`
+(multiplier `1 / (1 - c1 + m)`, trade balance, balanced-trade output); `compare` reports output and
+trade directions after fiscal or foreign-demand changes. `open_goods_canvas` draws demand, the
+45-degree line, and the output where trade is balanced. Net-exports and J-curve panels need an axis
+below zero and are not drawn.
+
 ## Animation
 
 A figure about a shift or an adjustment animates from the same builder. `pip install
