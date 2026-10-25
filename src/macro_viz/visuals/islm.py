@@ -4,12 +4,12 @@ from __future__ import annotations
 
 from collections.abc import Mapping
 
-from mosaickit import Canvas, Layer
+from mosaickit import BraceLayer, Canvas, Layer
 
 from macro_viz.errors import ValidationError
 from macro_viz.i18n import Labels
 from macro_viz.islm.analysis import ISLMShift, Policy
-from macro_viz.islm.models import ISLM
+from macro_viz.islm.models import ISLM, ISLMExpectations
 from macro_viz.visuals._theory import (
     DEFAULT_SAMPLES,
     EXTENT,
@@ -187,3 +187,56 @@ def _shift_layers(
         layers += marked_point(b, point_name(1), layer_id="macro.islm.crowding")
         layers.append(guide(b, (end.output, end.rate), layer_id="macro.islm.crowding.guide"))
     return layers
+
+
+def islm_expectations_canvas(
+    subject: ISLMExpectations,
+    *,
+    after: ISLMExpectations | None = None,
+    title: str | None = None,
+    labels: Mapping[str, str] | None = None,
+    **options: object,
+) -> Canvas:
+    """Draw IS-LM against the nominal rate with the real rate as a gap below it.
+
+    A brace on the rate axis spans from the real rate ``r`` up to the nominal rate ``i`` at the
+    equilibrium output and is named ``pi^e``. With ``after`` (changed expectations or money) the
+    new crossing and curves are drawn as in ``islm_canvas``; the nominal rate is on the axis.
+    """
+    text = Labels(labels)
+    overrides = {
+        "islm.axis.rate": text("islm.axis.nominal_rate"),
+        "islm.mark.rate": text("islm.mark.nominal_rate"),
+        "islm.mark.rate_shifted": text("islm.mark.nominal_rate_shifted"),
+    }
+    overrides.update(dict(labels or {}))
+    base = subject.nominal_model()
+    if after is None:
+        canvas = islm_canvas(base, title=title, labels=overrides, **options)  # type: ignore[arg-type]
+    else:
+        from macro_viz.direction import Direction
+        from macro_viz.islm.analysis import ISLMShift, Policy
+
+        post = after.nominal_model()
+        before_e, after_e = base.equilibrium(), post.equilibrium()
+        shift = ISLMShift(
+            base,
+            post,
+            Policy.FISCAL if post.autonomous != base.autonomous else Policy.MONETARY,
+            Direction.of(after_e.output - before_e.output),
+            Direction.of(after_e.rate - before_e.rate),
+        )
+        canvas = islm_canvas(shift, title=title, labels=overrides, **options)  # type: ignore[arg-type]
+    equilibrium = subject.equilibrium()
+    canvas.add(
+        BraceLayer(
+            "y",
+            subject.real_rate,
+            equilibrium.rate,
+            label=text("islm.mark.expected_inflation"),
+            side="outside",
+            id="macro.islm.wedge",
+            role="macro.annotation",
+        )
+    )
+    return canvas

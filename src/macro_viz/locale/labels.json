@@ -136,7 +136,13 @@
     "money.base.mark.money": "$H$",
     "money.base.curve.demand_shifted": "$H^{d'}$",
     "money.base.curve.supply_shifted": "$H^{s'}$",
-    "money.base.mark.money_shifted": "$H'$"
+    "money.base.mark.money_shifted": "$H'$",
+    "islm.axis.nominal_rate": "$i$",
+    "islm.mark.nominal_rate": "$i$",
+    "islm.mark.nominal_rate_shifted": "$i'$",
+    "islm.mark.real_rate": "$r$",
+    "islm.mark.real_rate_shifted": "$r'$",
+    "islm.mark.expected_inflation": "$\\pi^e$"
   },
   "zh-TW": {
     "axis.origin": "0",
@@ -275,7 +281,13 @@
     "money.base.mark.money": "$H$",
     "money.base.curve.demand_shifted": "$H^{d'}$",
     "money.base.curve.supply_shifted": "$H^{s'}$",
-    "money.base.mark.money_shifted": "$H'$"
+    "money.base.mark.money_shifted": "$H'$",
+    "islm.axis.nominal_rate": "$i$",
+    "islm.mark.nominal_rate": "$i$",
+    "islm.mark.nominal_rate_shifted": "$i'$",
+    "islm.mark.real_rate": "$r$",
+    "islm.mark.real_rate_shifted": "$r'$",
+    "islm.mark.expected_inflation": "$\\pi^e$"
   },
   "zh-CN": {
     "axis.origin": "0",
@@ -414,6 +426,12 @@
     "money.base.mark.money": "$H$",
     "money.base.curve.demand_shifted": "$H^{d'}$",
     "money.base.curve.supply_shifted": "$H^{s'}$",
-    "money.base.mark.money_shifted": "$H'$"
+    "money.base.mark.money_shifted": "$H'$",
+    "islm.axis.nominal_rate": "$i$",
+    "islm.mark.nominal_rate": "$i$",
+    "islm.mark.nominal_rate_shifted": "$i'$",
+    "islm.mark.real_rate": "$r$",
+    "islm.mark.real_rate_shifted": "$r'$",
+    "islm.mark.expected_inflation": "$\\pi^e$"
   }
 }

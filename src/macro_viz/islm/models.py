@@ -101,3 +101,41 @@ class ISLM:
 
     def with_rate_demand(self, rate_demand: float) -> ISLM:
         return replace(self, rate_demand=rate_demand)
+
+
+@dataclass(frozen=True, slots=True)
+class ISLMExpectations:
+    """IS-LM drawn against the nominal rate ``i`` when demand depends on ``r = i - pi_e``.
+
+    ``base`` is written in terms of the real rate; expected inflation ``pi_e`` is a given input.
+    Then ``IS: Y = multiplier * (a - b (i - pi_e))`` is the base IS shifted right by
+    ``multiplier * b * pi_e``, and the LM relation is in terms of ``i`` as before.
+    """
+
+    base: ISLM
+    expected_inflation: float
+
+    def __post_init__(self) -> None:
+        object.__setattr__(
+            self, "expected_inflation", _finite("expected inflation", self.expected_inflation)
+        )
+
+    def nominal_model(self) -> ISLM:
+        """The IS-LM model in the nominal rate: autonomous spending raised by ``b * pi_e``."""
+        base = self.base
+        return base.with_autonomous(base.autonomous + base.sensitivity * self.expected_inflation)
+
+    def equilibrium(self) -> ISLMEquilibrium:
+        """Output and the nominal rate ``i``."""
+        return self.nominal_model().equilibrium()
+
+    @property
+    def real_rate(self) -> float:
+        """``r = i - pi_e`` at equilibrium."""
+        return self.equilibrium().rate - self.expected_inflation
+
+    def with_expected_inflation(self, expected_inflation: float) -> ISLMExpectations:
+        return replace(self, expected_inflation=expected_inflation)
+
+    def with_real_money(self, real_money: float) -> ISLMExpectations:
+        return replace(self, base=self.base.with_real_money(real_money))

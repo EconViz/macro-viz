@@ -119,6 +119,10 @@ interest, and extra money or an LM shift on the flat part leaves the equilibrium
 market into the market for central-bank money; `central_bank_money_canvas` draws it with `H`
 labels.
 
+`ISLMExpectations(base, pi_e)` takes expected inflation as a given input: IS is drawn against the
+nominal rate (shifted by `b * pi_e`) and `islm_expectations_canvas` brackets the gap between the real
+and the nominal rate.
+
 ## Animation
 
 A figure about a shift or an adjustment animates from the same builder. `pip install

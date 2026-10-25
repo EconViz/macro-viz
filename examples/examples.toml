@@ -175,3 +175,8 @@ x_max_trap = 300
 [central_bank_money]
 currency_ratio = 0.2
 reserve_ratio = 0.1
+
+[expectations]
+expected_inflation = 0.2
+expected_inflation_after = 0.3
+real_money_after = 40
