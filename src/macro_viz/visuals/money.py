@@ -16,8 +16,8 @@ from macro_viz.visuals._theory import (
     curve,
     drop_lines,
     marked_point,
-    movement,
     point_name,
+    shift_arrow,
     theory_canvas,
     trim,
 )
@@ -138,7 +138,7 @@ def _shift_layers(
         role = "macro.curve.secondary.shifted"
         arrow = ((shift.baseline.supply, rate), (post.supply, rate))
     layers.extend(curve(points, layer_id=moved_id, role=role, label=label))
-    layers.append(movement(*arrow, layer_id="macro.money.shift"))
+    layers.append(shift_arrow(*arrow, layer_id="macro.money.shift", extent=(limit, top)))
     end = post.equilibrium()
     end_point = (end.money, end.rate)
     same = abs(end.money - shift.baseline.equilibrium().money) < SAME_MONEY
@@ -241,7 +241,7 @@ def money_demand_canvas(
         )
     )
     canvas.add(
-        movement(
+        shift_arrow(
             (
                 before.quantity(SHIFT_ARROW_RATE_SHARE * before.rate_max),
                 SHIFT_ARROW_RATE_SHARE * before.rate_max,
@@ -251,6 +251,7 @@ def money_demand_canvas(
                 SHIFT_ARROW_RATE_SHARE * before.rate_max,
             ),
             layer_id="macro.money.shift",
+            extent=(limit, top),
         )
     )
     return canvas

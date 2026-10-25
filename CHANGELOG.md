@@ -4,6 +4,13 @@ All notable changes to `macro-viz` will be documented in this file.
 
 ## Unreleased
 
+### Changed
+
+- Figures follow the manual panel style: dashed guides, only the price `p` lowercase (other variables
+  uppercase italic, interest rate `R`), a thin 45-degree line with an arrowhead and `45°` at its tip,
+  curved shift arrows (`shift_arrow`, with a bend side), animated GIF frames padded to one size, and a
+  test that no example label overlaps a line or another label.
+
 ### Added
 
 - Initial installable package scaffold and development checks.

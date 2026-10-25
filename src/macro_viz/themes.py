@@ -9,7 +9,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass, replace
 
-from mosaickit import DashStyle, Fill, Marker, Stroke, StyleBundle, TextStyle, Theme
+from mosaickit import ArrowStyle, DashStyle, Fill, Marker, Stroke, StyleBundle, TextStyle, Theme
 from mosaickit.themes import ThemeTokens, get_tokens, list_shared_themes
 
 WHITE = str(get_tokens("manual").color("background"))
@@ -33,6 +33,7 @@ class ThemeOptions:
     tertiary: str
     curve_width: float = 3.5
     shifted_width: float = 1.0
+    line45_width: float = 0.8
     arrow_width: float = 1.0
     guide_width: float = 1.0
     point_size: float = 42.25
@@ -96,13 +97,17 @@ def build_theme(options: ThemeOptions) -> Theme:
         "title": StyleBundle(text=_text(o, o.label, o.title_size)),
         # Theory curves: heavy lines named at their ends; the old position is thin and dashed.
         "macro.curve": StyleBundle(stroke=Stroke(color=o.axis, width=o.curve_width)),
+        "macro.line45": StyleBundle(
+            stroke=Stroke(color=o.axis, width=o.line45_width, arrow=ArrowStyle.TRIANGLE),
+            text=small,
+        ),
         "macro.mark": StyleBundle(text=small),
         "macro.annotation": StyleBundle(text=small),
         "macro.annotation.strong": StyleBundle(
             text=_text(o, o.label, o.annotation_size + 2, weight="bold")
         ),
         "macro.guide": StyleBundle(
-            stroke=Stroke(color=o.axis, width=o.guide_width, dash=DashStyle.DOTTED), text=small
+            stroke=Stroke(color=o.axis, width=o.guide_width, dash=DashStyle.DASHED), text=small
         ),
         "macro.movement": StyleBundle(
             stroke=Stroke(color=o.axis, width=o.arrow_width, dash=DashStyle.DASHED), text=small

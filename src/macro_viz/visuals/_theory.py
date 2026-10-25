@@ -13,11 +13,13 @@ from collections.abc import Callable, Sequence
 
 from mosaickit import (
     ArrowLayer,
+    ArrowStyle,
     AxisMarkLayer,
     Layer,
     MarkerLayer,
     PathLayer,
     PointLabelLayer,
+    Stroke,
 )
 
 from macro_viz.errors import ValidationError
@@ -34,6 +36,15 @@ DEFAULT_SAMPLES = 60
 
 HEADROOM = 0.92
 """Share of an axis a curve may reach, leaving room for its name and the axis arrow."""
+
+SHIFT_BEND = "left"
+"""Default side to which a shift arrow bulges, seen from its start."""
+
+BULGE = 0.12
+"""Sideways displacement of a shift arrow's middle, as a share of its length."""
+
+ARC_SAMPLES = 16
+"""Points along a curved arrow."""
 
 PRIME = "'"
 """The mark appended to a point name for each step beyond the baseline."""
@@ -211,10 +222,54 @@ def movement(start: Point, end: Point, *, layer_id: str) -> ArrowLayer:
     return ArrowLayer(start, end, id=layer_id, role="macro.movement", z_index=5)
 
 
+def shift_arrow(
+    start: Point,
+    end: Point,
+    *,
+    layer_id: str,
+    bend: str = SHIFT_BEND,
+    bulge: float = BULGE,
+    samples: int = ARC_SAMPLES,
+    extent: Point = (1.0, 1.0),
+) -> PathLayer:
+    """A thin curved arrow from ``start`` to ``end`` that bulges to ``bend`` (left or right).
+
+    ``left`` and ``right`` are seen walking from ``start`` to ``end``; ``bulge`` is the
+    sideways displacement of the middle as a share of the arrow's length, measured on the
+    page: ``extent`` is the length of the two axes, so a flat figure bends as a square one.
+    """
+    if bend not in ("left", "right"):
+        raise ValidationError("bend must be 'left' or 'right'")
+    ex, ey = extent
+    dx, dy = (end[0] - start[0]) / ex, (end[1] - start[1]) / ey
+    side = 1.0 if bend == "left" else -1.0
+    control = (
+        (start[0] + end[0]) / 2 - side * dy * bulge * 2 * ex,
+        (start[1] + end[1]) / 2 + side * dx * bulge * 2 * ey,
+    )
+    points = []
+    for k in range(samples):
+        t = k / (samples - 1)
+        points.append(
+            (
+                (1 - t) ** 2 * start[0] + 2 * (1 - t) * t * control[0] + t**2 * end[0],
+                (1 - t) ** 2 * start[1] + 2 * (1 - t) * t * control[1] + t**2 * end[1],
+            )
+        )
+    return PathLayer(
+        tuple(points),
+        id=layer_id,
+        role="macro.movement",
+        stroke=Stroke(arrow=ArrowStyle.OPEN),
+        z_index=5,
+        clip=False,
+    )
+
+
 def movement_label(start: Point, end: Point, label: str, *, layer_id: str) -> list[Layer]:
-    """A dashed arrow with its name placed beside its middle, covering nothing else."""
+    """A curved shift arrow with its name placed beside its middle, covering nothing else."""
     middle = ((start[0] + end[0]) / 2, (start[1] + end[1]) / 2)
     return [
-        movement(start, end, layer_id=layer_id),
+        shift_arrow(start, end, layer_id=layer_id),
         PointLabelLayer(middle, label, id=f"{layer_id}.label", role="macro.annotation", z_index=7),
     ]
