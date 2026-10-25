@@ -15,6 +15,13 @@ All notable changes to `macro-viz` will be documented in this file.
 
 ### Added
 
+- `macro_viz.keynesian`: consumption function, Keynesian cross (linear and curved demand), autonomous
+  spending shifts with the multiplier process, and the matching figures
+  (`consumption_function_canvas`, `keynesian_cross_canvas`, `multiplier_canvas`).
+- `macro_viz.animation` and the `macro-viz[animation]` extra: GIF and native animated SVG from any
+  figure builder through KineticKit; theory-diagram kit (`visuals/_theory.py`) with curves, guides,
+  marks, and direct labels.
+
 - Initial installable package scaffold and development checks.
 - Typed dated-series primitives with explicit units, index bases, dates, and `None` missing values.
 - GDP expenditure, GDP deflator, inflation, labor-market, trend, turning-point, recession, and

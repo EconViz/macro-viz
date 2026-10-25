@@ -43,3 +43,23 @@ trend = [985, 1010, 1035, 1060, 1085, 1110, 1135, 1160, 1185]
 recession_years = [[2020, 2020]]
 title_cycle = "Business cycle"
 title_gap = "Output gap"
+
+[keynesian]
+autonomous_consumption = 20
+propensity = 0.6
+investment = 20
+government = 30
+taxes = 20
+income_max = 200
+autonomous_change = 30
+rounds = 2
+curve_intercept = 40
+curve_slope = 0.5
+curve_bend = 0.0008
+curve_upper = 400
+
+[keynesian_animation]
+frames = 6
+step_seconds = 0.6
+fps = 10
+dpi = 100

@@ -21,6 +21,9 @@ dependencies = [
     "mosaickit>=1.0.0rc9,<2",
 ]
 
+[project.optional-dependencies]
+animation = ["kinetickit[raster]>=1.0.0b2,<2.0.0"]
+
 [project.urls]
 Homepage = "https://github.com/EconViz/macro-viz"
 Repository = "https://github.com/EconViz/macro-viz"

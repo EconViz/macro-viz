@@ -116,9 +116,6 @@ def build_theme(options: ThemeOptions) -> Theme:
         "title": StyleBundle(text=_text(o, o.label, o.title_size)),
         # Theory curves: heavy lines named at their ends; the old position is thin and dashed.
         "macro.curve": StyleBundle(stroke=Stroke(color=o.axis, width=o.curve_width)),
-        "macro.curve.shifted": StyleBundle(
-            stroke=Stroke(width=o.shifted_width, dash=DashStyle.DASHED)
-        ),
         "macro.mark": StyleBundle(text=small),
         "macro.annotation": StyleBundle(text=small),
         "macro.annotation.strong": StyleBundle(
@@ -192,6 +189,9 @@ def build_theme(options: ThemeOptions) -> Theme:
         roles[f"macro.curve.{name}"] = StyleBundle(
             stroke=Stroke(color=color, width=o.curve_width),
             text=_text(o, color, o.label_size),
+        )
+        roles[f"macro.curve.{name}.shifted"] = StyleBundle(
+            stroke=Stroke(color=color, width=o.shifted_width, dash=DashStyle.DASHED)
         )
     return Theme(o.name, roles, defaults=StyleBundle(text=TextStyle(font=o.font)))
 

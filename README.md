@@ -47,6 +47,28 @@ keyed by stable ids in English, Traditional Chinese, and Simplified Chinese; eve
 be passed in. Nothing else is written into the drawing code: sizes, widths, colours, and fonts
 come from the theme and the settings below.
 
+## Keynesian goods market
+
+`macro_viz.keynesian` holds the renderer-free model: `ConsumptionFunction(c0, c1)`,
+`KeynesianCross(consumption, investment, government, taxes)` (equilibrium `Y = Z`, multiplier
+`1 / (1 - c1)`), `CurvedDemand(function, lower, upper)` for a non-linear demand curve, and
+`analyze_autonomous_shift(model, change)`, which returns both equilibria, the direction of the
+change, and the rounds of the multiplier process. The builders `consumption_function_canvas`,
+`keynesian_cross_canvas`, and `multiplier_canvas` draw them with arrowed axes, direct curve names,
+dotted guides to marks on the axes, an old position that stays heavy and a new one that is thin
+and dashed. Every text is a label id of the locale table and can be replaced through `labels=`;
+the axes follow the model (`x_max` and `extent` change them).
+
+## Animation
+
+A figure about a shift or an adjustment animates from the same builder. `pip install
+macro-viz[animation]` adds KineticKit. `macro_viz.animation.save_gif(builder, values, path)` renders
+the builder's canvas at each value through MosaicKit and streams the frames into a GIF;
+`save_svg` morphs between the frames' layers, matched by their stable ids, into a native animated
+SVG and sets the labels with GlyphKit in the fonts of the active settings. Fix every axis range
+in the builder, as `examples/scripts/keynesian_animation.py` does. Without KineticKit the static
+figures work unchanged.
+
 ## Configuration
 
 The package declares a MosaicKit schema for the `[macro.*]` portion of the shared
