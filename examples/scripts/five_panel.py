@@ -25,9 +25,14 @@ def main(argv: Sequence[str] | None = None) -> None:
         **common,
     ).save(output / f"five_panel_capital{suffix}")
 
-    five_panel_canvas(expenditure(data), mode=Mode.DERIVED, lras=True, **common).save(
-        output / f"five_panel_expenditure{suffix}"
-    )
+    five_panel_canvas(
+        expenditure(data),
+        mode=Mode.DERIVED,
+        lras=True,
+        shifted_sras=data["expenditure"]["shifted_sras"],
+        hide_ticks=hidden(data, "expenditure"),
+        **common,
+    ).save(output / f"five_panel_expenditure{suffix}")
 
 
 if __name__ == "__main__":

@@ -119,9 +119,9 @@ extent = 1.5
 width = 6.0
 
 [panels.islm]
-interest_sensitivity = 4.0
-income_demand = 0.4
-interest_demand = 0.2
+interest_sensitivity = 2.0
+income_demand = 0.25
+interest_demand = 1.0
 money = 1.0
 rate = 2.0
 
@@ -147,4 +147,6 @@ hidden_ticks = [["W", "B"], ["W", "C"], ["N", "B"]]
 sras_label = "$AS({capital})$"
 
 [panels.expenditure]
-expenditure_factor = 1.12
+expenditure_factor = 1.1
+shifted_sras = false
+hidden_ticks = [["W", "B"], ["p", "B"], ["R", "B"], ["N", "B"]]
