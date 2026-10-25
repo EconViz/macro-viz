@@ -186,3 +186,11 @@ exports = 25
 import_propensity = 0.2
 government_after = 50
 exports_after = 40
+
+[mundell_fleming]
+foreign_rate = 0.4
+expected_rate = 100
+parity_slope = 40
+exchange_effect = 0.2
+fiscal_after = 120
+money_after = 35
