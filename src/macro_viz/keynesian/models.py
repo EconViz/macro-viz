@@ -15,10 +15,10 @@ from __future__ import annotations
 import math
 from collections.abc import Callable
 from dataclasses import dataclass
-from enum import Enum
 from numbers import Real
 from typing import Protocol
 
+from macro_viz.direction import Direction
 from macro_viz.errors import ValidationError
 
 DEFAULT_TOLERANCE = 1e-9
@@ -32,18 +32,6 @@ def _finite(name: str, value: float) -> float:
     if isinstance(value, bool) or not isinstance(value, Real) or not math.isfinite(value):
         raise ValidationError(f"{name} must be a finite number")
     return float(value)
-
-
-class Direction(str, Enum):
-    """The sign of a change."""
-
-    UP = "up"
-    DOWN = "down"
-    NONE = "none"
-
-    @classmethod
-    def of(cls, change: float) -> Direction:
-        return cls.UP if change > 0 else cls.DOWN if change < 0 else cls.NONE
 
 
 @dataclass(frozen=True, slots=True)

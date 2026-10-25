@@ -20,6 +20,8 @@ def run(script: str, *arguments: str) -> None:
 def test_keynesian_examples_write_nonempty_images(tmp_path: Path) -> None:
     run("keynesian.py", "--output", str(tmp_path))
     run("keynesian_animation.py", "--output", str(tmp_path))
+    run("money.py", "--output", str(tmp_path))
+    run("money_animation.py", "--output", str(tmp_path))
 
     images = {image.stem: image for image in tmp_path.glob("*.svg")}
     assert {
@@ -27,6 +29,10 @@ def test_keynesian_examples_write_nonempty_images(tmp_path: Path) -> None:
         "keynesian_cross_curved",
         "multiplier",
         "consumption_function",
+        "money_demand",
+        "money_market",
+        "money_income_shift",
+        "money_supply_shift",
     } <= set(images)
     assert all(image.stat().st_size > 0 for image in images.values())
 

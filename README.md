@@ -39,6 +39,16 @@ dotted guides to marks on the axes, an old position that stays heavy and a new o
 and dashed. Every text is a label id of the locale table and can be replaced through `labels=`;
 the axes follow the model (`x_max` and `extent` change them).
 
+## Money market
+
+`macro_viz.money` holds `MoneyDemand(nominal_income, liquidity, rate_max)` (`Md = $Y L(i)` with a
+decreasing `L`), `MoneyMarket(demand, supply)` whose `equilibrium()` solves `$Y L(i) = M` for the
+interest rate, and `analyze_income_shift` / `analyze_supply_shift`, which return the baseline and
+post-change markets with the direction of the rate and of the money stock. `money_market_canvas`
+draws the market (and, given a shift, the old position heavy, the new one thin and dashed, A and
+A', and an arrow); `money_demand_canvas` shows the demand curve before and after a change in
+nominal income at one interest rate.
+
 ## Animation
 
 A figure about a shift or an adjustment animates from the same builder. `pip install

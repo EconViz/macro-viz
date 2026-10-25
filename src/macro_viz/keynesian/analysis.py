@@ -2,7 +2,8 @@
 
 from __future__ import annotations
 
-from macro_viz.keynesian.models import AutonomousShift, Direction, KeynesianCross
+from macro_viz.direction import Direction
+from macro_viz.keynesian.models import AutonomousShift, KeynesianCross
 
 
 def analyze_autonomous_shift(model: KeynesianCross, change: float) -> AutonomousShift:
