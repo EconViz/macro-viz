@@ -29,6 +29,9 @@ the demand at a zero rate), so every curve ends inside the plot with room for it
 SAME_MONEY = 1e-9
 """Two money quantities closer than this share one mark on the axis."""
 
+FLAT_EXTENT = 4.0
+"""Length of the flat piece of a zero-bound demand curve, as a multiple of its zero-rate demand."""
+
 SHIFT_ARROW_RATE_SHARE = 0.7
 """Height of the arrow showing a curve's shift, as a share of the highest interest rate."""
 
@@ -38,7 +41,11 @@ def demand_curve(demand: MoneyDemand, samples: int) -> list[tuple[float, float]]
     if isinstance(samples, bool) or not isinstance(samples, int) or samples < 2:
         raise ValidationError("samples must be an integer of at least 2")
     step = demand.rate_max / (samples - 1)
-    return [(demand.quantity(k * step), k * step) for k in range(samples)]
+    points = [(demand.quantity(k * step), k * step) for k in range(samples)]
+    if demand.zero_bound:
+        # beyond the demand at a zero rate extra money is held at no cost: a flat piece
+        points.insert(0, (demand.quantity(0.0) * FLAT_EXTENT, 0.0))
+    return points
 
 
 def _supply_line(money: float, top: float) -> list[tuple[float, float]]:
@@ -103,7 +110,7 @@ def money_market_canvas(
         drop_lines(
             start_point,
             x_label=text("money.mark.money"),
-            y_label=text("money.mark.rate"),
+            y_label=text("money.mark.rate") if start.rate > 0 else None,
             layer_id="macro.money.equilibrium.guide",
         )
     )
@@ -146,7 +153,7 @@ def _shift_layers(
         drop_lines(
             end_point,
             x_label=None if same else text("money.mark.money_shifted"),
-            y_label=text("money.mark.rate_shifted"),
+            y_label=text("money.mark.rate_shifted") if end.rate > 0 else None,
             layer_id="macro.money.equilibrium.shifted.guide",
         )
     )

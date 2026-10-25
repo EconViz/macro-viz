@@ -162,3 +162,12 @@ sras_label = "$AS({capital})$"
 expenditure_factor = 1.1
 shifted_sras = false
 hidden_ticks = [["W", "B"], ["p", "B"], ["R", "B"], ["N", "B"]]
+
+[liquidity_trap]
+rate_demand_zero = 8
+real_money_trap = 60
+real_money_trap_after = 90
+supply_trap = 130
+supply_trap_after = 160
+autonomous_trap = 80
+x_max_trap = 300

@@ -111,6 +111,10 @@ IS: Y = X - e R   LM: M / p = k Y - h R  AD: Y = (X + (e / h) M / p) / (1 + e k 
 figures; `Mode.DERIVED` draws the curves from the equations. See `examples/scripts/four_panel.py`
 and `five_panel.py`; the scenarios live in `examples/examples.toml`.
 
+`MoneyDemand(..., zero_bound=True)` and `ISLM(..., zero_bound=True)` add the zero lower bound: money
+demand goes flat at a zero rate, the LM curve is flat up to the output where money demand reaches zero
+interest, and extra money or an LM shift on the flat part leaves the equilibrium unchanged.
+
 ## Animation
 
 A figure about a shift or an adjustment animates from the same builder. `pip install

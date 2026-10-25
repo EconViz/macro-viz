@@ -25,6 +25,13 @@ from macro_viz.visuals._theory import (
     trim,
 )
 
+SAME_VALUE = 1e-9
+"""Two values closer than this share one mark on the axis."""
+
+ZERO_RATE_SHARE = 0.5
+"""When the equilibrium rate is zero, the rate axis is this share of the rate at which IS meets
+the output axis."""
+
 ARROW_SHARE = 0.55
 """Where the shift arrow starts, as a share of the horizontal axis (IS) or of the rate axis."""
 
@@ -38,7 +45,11 @@ def is_curve(model: ISLM, rate_max: float, samples: int) -> list[tuple[float, fl
 def lm_curve(model: ISLM, rate_max: float, samples: int) -> list[tuple[float, float]]:
     """Points ``(Y, R)`` of the LM curve for ``R`` from zero to ``rate_max``."""
     step = rate_max / (samples - 1)
-    return [(model.lm_output(k * step), k * step) for k in range(samples)]
+    points = [(model.lm_output(k * step), k * step) for k in range(samples)]
+    if model.zero_bound:
+        # flat at a zero rate up to the output where money demand reaches zero interest
+        points.insert(0, (0.0, 0.0))
+    return points
 
 
 def islm_canvas(
@@ -68,9 +79,14 @@ def islm_canvas(
     assert isinstance(model, ISLM)
     models = [model] + ([shift.post] if shift is not None else [])
     equilibria = [m.equilibrium() for m in models]
-    if any(e.rate <= 0 for e in equilibria):
+    if any(
+        e.rate < 0 or (e.rate == 0 and not m.zero_bound)
+        for e, m in zip(equilibria, models, strict=True)
+    ):
         raise ValidationError("the equilibrium interest rate must be positive to draw the figure")
-    rates = rate_max if rate_max is not None else 2.0 * max(e.rate for e in equilibria)
+    highest = max(e.rate for e in equilibria)
+    fallback = ZERO_RATE_SHARE * model.autonomous / model.sensitivity
+    rates = rate_max if rate_max is not None else (2.0 * highest if highest > 0 else fallback)
     right = x_max if x_max is not None else extent * max(e.output for e in equilibria)
     top = rates / HEADROOM
     text = Labels(labels)
@@ -106,7 +122,7 @@ def islm_canvas(
         drop_lines(
             point,
             x_label=text("islm.mark.output"),
-            y_label=text("islm.mark.rate"),
+            y_label=text("islm.mark.rate") if start.rate > 0 else None,
             layer_id="macro.islm.equilibrium.guide",
         )
     )
@@ -146,18 +162,25 @@ def _shift_layers(
         arrow = ((shift.baseline.lm_output(rate), rate), (post.lm_output(rate), rate))
     layers.append(shift_arrow(*arrow, layer_id="macro.islm.shift", extent=(right, top)))
     end = shift.after
-    layers += drop_lines(
-        (end.output, end.rate),
-        x_label=text("islm.mark.output_shifted"),
-        y_label=text("islm.mark.rate_shifted"),
-        layer_id="macro.islm.equilibrium.shifted.guide",
+    unchanged = (
+        abs(end.output - shift.before.output) < SAME_VALUE
+        and abs(end.rate - shift.before.rate) < SAME_VALUE
     )
-    layers += marked_point(
-        (end.output, end.rate),
-        point_name(0, prime=1),
-        layer_id="macro.islm.equilibrium.shifted",
-        role="macro.point.shifted",
-    )
+    if not unchanged:
+        layers += drop_lines(
+            (end.output, end.rate),
+            x_label=None
+            if abs(end.output - shift.before.output) < SAME_VALUE
+            else text("islm.mark.output_shifted"),
+            y_label=text("islm.mark.rate_shifted") if end.rate > 0 else None,
+            layer_id="macro.islm.equilibrium.shifted.guide",
+        )
+        layers += marked_point(
+            (end.output, end.rate),
+            point_name(0, prime=1),
+            layer_id="macro.islm.equilibrium.shifted",
+            role="macro.point.shifted",
+        )
     if show_crowding and shift.policy is Policy.FISCAL:
         base_rate = shift.before.rate
         b = (post.is_output(base_rate), base_rate)
