@@ -14,7 +14,7 @@ from macro_viz.visuals.growth import (
     solow_level_path_canvas,
     solow_log_path_canvas,
 )
-from macro_viz.visuals.islm import islm_canvas
+from macro_viz.visuals.islm import islm_canvas, islm_expectations_canvas
 from macro_viz.visuals.keynesian import (
     consumption_function_canvas,
     keynesian_cross_canvas,
@@ -43,6 +43,7 @@ __all__ = [
     "aggregate_supply_canvas",
     "consumption_function_canvas",
     "islm_canvas",
+    "islm_expectations_canvas",
     "five_panel_canvas",
     "four_panel_canvas",
     "keynesian_cross_canvas",
