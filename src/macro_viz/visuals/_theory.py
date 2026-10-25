@@ -106,10 +106,19 @@ def _clip(
 
 
 def trim(
-    points: Sequence[Point], x_max: float, y_max: float, *, headroom: float = HEADROOM
+    points: Sequence[Point],
+    x_max: float,
+    y_max: float,
+    *,
+    headroom: float = HEADROOM,
+    floor: float = 0.0,
 ) -> list[Point]:
-    """The part of a polyline inside the plot, short of ``headroom`` of each axis."""
-    box = (0.0, 0.0, headroom * x_max, headroom * y_max)
+    """The part of a polyline inside the plot, short of ``headroom`` of each axis.
+
+    ``floor`` (a share of the vertical axis) also cuts off the part below it, so a falling line
+    does not end on the axis where its name would collide with the axis marks.
+    """
+    box = (0.0, floor * y_max, headroom * x_max, headroom * y_max)
     kept: list[Point] = []
     for start, end in zip(points, points[1:], strict=False):
         clipped = _clip(start, end, box)

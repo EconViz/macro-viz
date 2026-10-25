@@ -104,6 +104,18 @@ step_seconds = 0.6
 fps = 10
 dpi = 100
 
+[wsps]
+level = 1.4
+slope = 3.0
+benefits = 0.3
+markup = 0.25
+benefits_after = 0.5
+markup_after = 0.5
+productivity_after = 1.25
+ws_after = 1.3
+ps_after = 1.1
+labor_force = 100
+
 # Linked panels. The economy is shared; each scenario lists its steps and how they are drawn.
 [panels.economy]
 productivity = 3.0
