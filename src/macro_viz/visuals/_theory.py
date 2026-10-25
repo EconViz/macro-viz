@@ -47,6 +47,14 @@ def point_name(index: int, prime: int = 0) -> str:
     return f"${string.ascii_uppercase[index]}{PRIME * prime}$"
 
 
+def primed(label: str, primes: int) -> str:
+    """``label`` (``$...$`` math or plain text) with ``primes`` primes after its last symbol."""
+    if not primes:
+        return label
+    mark = PRIME * primes
+    return f"{label[:-1]}{mark}$" if label.startswith("$") and label.endswith("$") else label + mark
+
+
 def sample(
     function: Callable[[float], float], low: float, high: float, samples: int
 ) -> list[Point]:

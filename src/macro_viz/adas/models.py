@@ -82,6 +82,30 @@ class AggregateSupply:
         """The price level firms set at ``output``."""
         return self.scale * self.expected_price * float(self.response(output))
 
+    @property
+    def effective_natural_output(self) -> float:
+        """Output at which the price level equals its expected value: ``scale * h(Y) = 1``.
+
+        It equals ``natural_output`` while ``scale`` is one; a cost shock (``scale`` above one)
+        lowers it and a productivity gain (``scale`` below one) raises it.
+        """
+        if self.scale == 1.0:
+            return self.natural_output
+        low, high = 0.0, self.natural_output
+        for _ in range(SEARCH_LIMIT):
+            if self.scale * float(self.response(high)) >= 1.0:
+                break
+            high *= 2
+        else:
+            raise ValidationError("the price response never reaches the expected price level")
+        while high - low > DEFAULT_TOLERANCE:
+            middle = (low + high) / 2
+            if self.scale * float(self.response(middle)) >= 1.0:
+                high = middle
+            else:
+                low = middle
+        return (low + high) / 2
+
     def with_expected_price(self, expected_price: float) -> AggregateSupply:
         return replace(self, expected_price=expected_price)
 
@@ -166,7 +190,7 @@ class ASADModel:
             else:
                 low = middle
         output = (low + high) / 2
-        natural = self.supply.natural_output
+        natural = self.supply.effective_natural_output
         spread = self.tolerance * 1e3 + 1e-9 * natural
         if output < natural - spread:
             kind = Gap.RECESSIONARY

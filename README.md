@@ -60,6 +60,10 @@ none), `analyze_demand_shock` and `analyze_supply_shock` with direction metadata
 note, or the unknown direction of a demand shift; `aggregate_supply_canvas` and
 `aggregate_demand_canvas` draw one curve and its shifts.
 
+`analyze_adjustment` lists the equilibria as expectations catch up (the expected price becomes
+the price just observed) after a demand or supply shock, ending at natural output;
+`adas_adjustment_canvas` draws the shifting supply curves and the path A, A', A''.
+
 ## Animation
 
 A figure about a shift or an adjustment animates from the same builder. `pip install
