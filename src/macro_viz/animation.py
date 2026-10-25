@@ -91,7 +91,7 @@ def linear_values(start: float, stop: float, frames: int) -> tuple[float, ...]:
     return tuple(start + k * step for k in range(frames))
 
 
-def frames(builder: Builder, values: Sequence[float]) -> list[Canvas | CanvasGrid]:
+def frames(builder: Builder, values: Sequence[float]) -> list[Any]:
     """The canvas of ``builder`` at each of ``values``."""
     if not values:
         raise ValidationError("an animation needs at least one value")
