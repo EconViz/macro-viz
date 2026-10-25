@@ -52,7 +52,36 @@ def text(label_id: str, *, language: str | None = None, **fields: str) -> str:
     table = label_table(validate_language(language))
     if label_id not in table:
         raise ValidationError(f"unknown label id {label_id!r}")
-    return table[label_id].format(**fields)
+    return table[label_id].format(**fields) if fields else table[label_id]
 
 
-__all__ = ["DEFAULT_LANGUAGE", "LANGUAGES", "label_ids", "label_table", "text", "validate_language"]
+class Labels:
+    """The built-in text of one figure: ids resolved in one language, with caller overrides.
+
+    ``overrides`` maps label ids to the text to draw instead; an unknown id raises. Calling the
+    object with an id returns its text.
+    """
+
+    def __init__(self, overrides: Mapping[str, str] | None = None, *, language: str | None = None):
+        self._language = language
+        self._overrides = dict(overrides or {})
+        unknown = sorted(set(self._overrides) - set(label_ids()))
+        if unknown:
+            raise ValidationError(f"unknown label ids: {', '.join(unknown)}")
+
+    def __call__(self, label_id: str, **fields: str) -> str:
+        if label_id in self._overrides:
+            override = self._overrides[label_id]
+            return override.format(**fields) if fields else override
+        return text(label_id, language=self._language, **fields)
+
+
+__all__ = [
+    "DEFAULT_LANGUAGE",
+    "LANGUAGES",
+    "Labels",
+    "label_ids",
+    "label_table",
+    "text",
+    "validate_language",
+]
