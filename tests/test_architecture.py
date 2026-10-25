@@ -11,8 +11,6 @@ else:  # pragma: no cover - Python 3.10 only
 
 PACKAGE_ROOT = Path(__file__).parents[1] / "src" / "macro_viz"
 DOMAIN_MODULES = (
-    "accounts",
-    "cycles",
     "keynesian",
     "adas",
     "money",

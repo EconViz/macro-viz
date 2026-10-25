@@ -39,25 +39,26 @@ def test_macro_table_overrides_palette_strokes_and_colors() -> None:
             "macro": {
                 "palette": "nord",
                 "color": {"primary": "#123456"},
-                "stroke": {"series": 3.5},
-                "marker": {"turning_point": 7},
+                "stroke": {"curve": 3.5, "arrow": 2},
+                "marker": {"point": 7},
             },
         }
     )
 
     assert config.theme.name == "nord"
     assert config.settings.options.primary == "#123456"
-    assert config.settings.options.line_width == 3.5
-    assert config.settings.options.marker_size == 49
-    assert config.settings.options.background == "#ffffff"
+    assert config.settings.options.curve_width == 3.5
+    assert config.settings.options.arrow_width == 2
+    assert config.settings.options.point_size == 49
+    assert config.settings.options.background == Config().settings.options.background
 
 
 @pytest.mark.parametrize(
     "data",
     [
         {"macro": {"palette": "rainbow"}},
-        {"macro": {"stroke": {"series": 0}}},
-        {"macro": {"marker": {"turning_point": -1}}},
+        {"macro": {"stroke": {"curve": 0}}},
+        {"macro": {"marker": {"point": -1}}},
         {"macro": {"unknown": True}},
     ],
 )
@@ -86,17 +87,14 @@ def test_language_and_label_nudges_are_validated_and_resolved() -> None:
 
 
 def test_output_without_settings_equals_the_empty_settings_output() -> None:
-    from datetime import date
+    from macro_viz.keynesian import ConsumptionFunction, KeynesianCross
+    from macro_viz.visuals import keynesian_cross_canvas
 
-    from macro_viz import IndexBase, TimeSeries
-    from macro_viz.visuals import price_index_canvas
-
-    dates = (date(2023, 1, 1), date(2024, 1, 1))
-    cpi = TimeSeries("CPI", dates, (100.0, 104.0), "index", IndexBase(dates[0]))
+    model = KeynesianCross(ConsumptionFunction(20, 0.6), 20, 30, 20)
 
     Config.reset()
-    without = price_index_canvas(cpi, title="T").snapshot()
+    without = keynesian_cross_canvas(model, title="T").snapshot()
     Config.from_dict({}).use()
-    empty = price_index_canvas(cpi, title="T").snapshot()
+    empty = keynesian_cross_canvas(model, title="T").snapshot()
 
     assert without == empty

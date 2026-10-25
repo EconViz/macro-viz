@@ -3,49 +3,29 @@
 `macro-viz` is the EconViz package for textbook macroeconomic analysis and diagrams. It targets
 introductory and intermediate models whose equations are given and need to be analysed or drawn.
 
-The current `0.2.0.dev0` milestone provides typed national-account and business-cycle analysis,
-plus renderer-neutral MosaicKit figures for:
-
-- GDP expenditure decomposition, `Y = C + I + G + NX`
-- nominal GDP, real GDP, and the GDP deflator
-- CPI and lagged inflation rates
-- employment, unemployment, and unemployment rates
-- linear trends, local peaks and troughs, recession shading, and percentage output gaps
+The current `0.2.0.dev0` milestone provides the Keynesian goods market (consumption function,
+Keynesian cross, multiplier) as typed models and MosaicKit figures, and an optional animation
+layer. Statistics-style data charts and accounting-style box diagrams are out of scope: the package
+draws models whose equations are given.
 
 ## Quick start
 
 ```python
-from datetime import date
+from macro_viz.keynesian import ConsumptionFunction, KeynesianCross, analyze_autonomous_shift
+from macro_viz.visuals import multiplier_canvas
 
-from macro_viz import TimeSeries
-from macro_viz.accounts import analyze_gdp_series
-from macro_viz.visuals import gdp_levels_canvas
+model = KeynesianCross(ConsumptionFunction(20, 0.6), investment=20, government=30, taxes=20)
+shift = analyze_autonomous_shift(model, change=30)
 
-dates = (date(2022, 1, 1), date(2023, 1, 1), date(2024, 1, 1))
-nominal = TimeSeries("Nominal GDP", dates, (100, 110, 121), "billions USD")
-real = TimeSeries("Real GDP", dates, (100, 105, 110), "billions USD")
-result = analyze_gdp_series(nominal, real, base_period=dates[0])
-
-gdp_levels_canvas(result, title="Nominal and real GDP").save("gdp.png")
+multiplier_canvas(shift, title="A rise in autonomous spending").save("multiplier.svg")
 ```
 
-`TimeSeries` uses strictly increasing `date` values, preserves the unit label, and represents
-missing observations only with `None`. Transformations propagate missing values rather than
-interpolating them. Price indexes carry an `IndexBase`, whose period and value must match an
-observed point. Nominal and real GDP use the same unit and must agree in the GDP-deflator base
-period. Inflation is the percentage change over the requested observation lag. Output gaps use
-`100 * (actual - trend) / trend`; turning points are strict local extrema and never bridge a
-missing observation.
-
-Every visual builder accepts `title=None` (no title), returns a MosaicKit `Canvas` (a
-`CanvasGrid` for the two-panel labour-market figure), and emits stable `macro.*` economic layer
-IDs. Axes carry arrowheads, value axes start at a rounded bound below the data, dates are
-labelled with `date_format` (default `"%Y"`), and series are named directly at their last
-observation instead of in a legend. Series of different magnitude never share an axis.
-Built-in words (`Peak`, `Trough`, the names of derived series, units) come from a locale table
-keyed by stable ids in English, Traditional Chinese, and Simplified Chinese; every name can also
-be passed in. Nothing else is written into the drawing code: sizes, widths, colours, and fonts
-come from the theme and the settings below.
+Every visual builder accepts `title=None` (no title), returns a MosaicKit `Canvas`, and emits
+stable `macro.*` layer IDs. Axes carry arrowheads, curves are named directly at their end instead
+of in a legend, and values are marked on the axes with dotted guides. Built-in words come from a
+locale table keyed by stable ids in English, Traditional Chinese, and Simplified Chinese, and every
+text can be replaced through `labels=`. Nothing else is written into the drawing code: sizes,
+widths, colours, and fonts come from the theme and the settings below.
 
 ## Keynesian goods market
 
@@ -85,10 +65,10 @@ language = "zh-TW"        # built-in text: en, zh-TW, zh-CN
 
 [macro.stroke]            # points
 curve = 3.5
-series = 2.4
+shifted = 1.0
 
 [macro.marker]
-turning_point = 7
+point = 6.5
 
 [macro.text]
 scale = 1.5               # multiplies every text size
@@ -109,7 +89,8 @@ white background, TeX Gyre Pagella, direct labels, arrowed axes) in `examples/ec
 Both, the output folder, and the image format are command-line arguments. Regenerate locally with:
 
 ```bash
-uv run python examples/scripts/run_all.py --output examples/output
+uv run python examples/scripts/keynesian.py --output examples/output
+uv run python examples/scripts/keynesian_animation.py --output examples/output
 ```
 
 The scripts look for the font files in `$MACRO_VIZ_FONT_DIR` and in a TeX Live installation, and
@@ -117,7 +98,7 @@ fall back to the default serif face when they are missing.
 
 ## Scope and architecture
 
-Planned areas include the Keynesian cross, AD-AS, money markets, IS-LM, Phillips curves, Solow
+Planned areas include AD-AS, money markets, IS-LM, Phillips curves, Solow
 growth, open-economy macroeconomics, linked-panel transmission diagrams, phase portraits,
 difference equations, cobweb diagrams, and the static New Keynesian three-equation model.
 
@@ -134,16 +115,15 @@ domain model -> analysis -> typed result -> visual builder -> MosaicKit layers
 Domain and analysis modules remain renderer-neutral. Visual builders use public MosaicKit scenes
 and layers rather than importing Matplotlib or implementing a separate drawing layer.
 
-`mosaickit` is the only direct graphics dependency for this milestone. Text support supplied by
-`glyphkit` arrives transitively through MosaicKit. `bezierkit` will become a direct dependency only
-when a real macroeconomic curve-geometry feature needs it. `kinetickit[raster]` will remain an
-optional dependency until macro-viz exposes a public animation API, following utility-viz's
-dependency boundary. Unused lower-level packages are deliberately not listed as direct
-dependencies.
+`mosaickit` is the only direct graphics dependency. `kinetickit[raster]` is the optional
+`macro-viz[animation]` extra, following utility-viz's dependency boundary; text support supplied
+by `glyphkit` arrives through MosaicKit and KineticKit. `bezierkit` will become a direct dependency
+only when a real macroeconomic curve-geometry feature needs it.
 
 ## Installation
 
-The package has not been released. For development:
+The package has not been released. For development (add `--extra animation` for the animation
+tests):
 
 ```bash
 git clone https://github.com/EconViz/macro-viz.git

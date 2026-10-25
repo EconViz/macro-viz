@@ -20,8 +20,8 @@ WHITE = str(get_tokens("manual").color("background"))
 class ThemeOptions:
     """Concrete visual options produced by the macro-viz configuration schema.
 
-    Widths and diameters are in points; ``marker_size`` is the marker area, the square of
-    its diameter. Text sizes are in points and are multiplied by ``text_scale``.
+    Widths and diameters are in points; ``point_size`` is the marker area, the square of its
+    diameter. Text sizes are in points and are multiplied by ``text_scale``.
     """
 
     name: str
@@ -31,20 +31,10 @@ class ThemeOptions:
     primary: str
     secondary: str
     tertiary: str
-    accent: str
-    intervention: str
-    muted: str
-    fill_light: str
-    fill_mid: str
-    fill_dark: str
-    fill_faint: str
     curve_width: float = 3.5
     shifted_width: float = 1.0
     arrow_width: float = 1.0
-    line_width: float = 2.2
-    secondary_width: float = 1.6
     guide_width: float = 1.0
-    marker_size: float = 36.0
     point_size: float = 42.25
     font: str = "sans"
     label_size: float = 11.0
@@ -70,13 +60,6 @@ def options_from_tokens(tokens: ThemeTokens, *, font: str = "sans") -> ThemeOpti
         primary=color("primary"),
         secondary=color("secondary"),
         tertiary=color("tertiary"),
-        accent=color("accent"),
-        intervention=color("intervention"),
-        muted=color("muted"),
-        fill_light=color("fill.light"),
-        fill_mid=color("fill.mid"),
-        fill_dark=color("fill.dark"),
-        fill_faint=color("fill.faint"),
         font=font,
     )
     return replace(
@@ -84,10 +67,7 @@ def options_from_tokens(tokens: ThemeTokens, *, font: str = "sans") -> ThemeOpti
         curve_width=base.curve_width * tokens.line_scale,
         shifted_width=base.shifted_width * tokens.line_scale,
         arrow_width=base.arrow_width * tokens.line_scale,
-        line_width=base.line_width * tokens.line_scale,
-        secondary_width=base.secondary_width * tokens.line_scale,
         guide_width=base.guide_width * tokens.line_scale,
-        marker_size=base.marker_size * tokens.marker_scale**2,
         point_size=base.point_size * tokens.marker_scale**2,
         text_scale=tokens.label_scale,
     )
@@ -134,55 +114,6 @@ def build_theme(options: ThemeOptions) -> Theme:
         "macro.point.shifted": StyleBundle(
             marker=Marker(color=o.tertiary, size=o.point_size, edge_color=o.tertiary, edge_width=0),
             text=_text(o, o.tertiary, o.label_size),
-        ),
-        "macro.accounts.component.consumption": StyleBundle(
-            fill=Fill(color=o.fill_light, opacity=0.72), text=small
-        ),
-        "macro.accounts.component.investment": StyleBundle(
-            fill=Fill(color=o.fill_mid, opacity=0.72), text=small
-        ),
-        "macro.accounts.component.government": StyleBundle(
-            fill=Fill(color=o.fill_dark, opacity=0.72), text=small
-        ),
-        "macro.accounts.component.net.exports": StyleBundle(
-            fill=Fill(color=o.fill_faint, opacity=0.88), text=small
-        ),
-        "macro.accounts.component.total": StyleBundle(
-            fill=Fill(color=o.primary, opacity=0.58), text=small
-        ),
-        "macro.series.primary": StyleBundle(
-            stroke=Stroke(color=o.primary, width=o.line_width),
-            text=_text(o, o.primary, o.label_size),
-        ),
-        "macro.series.secondary": StyleBundle(
-            stroke=Stroke(color=o.secondary, width=o.line_width),
-            text=_text(o, o.secondary, o.label_size),
-        ),
-        "macro.series.tertiary": StyleBundle(
-            stroke=Stroke(color=o.tertiary, width=o.secondary_width),
-            text=_text(o, o.tertiary, o.label_size),
-        ),
-        "macro.series.accent": StyleBundle(
-            stroke=Stroke(color=o.accent, width=o.line_width), text=_text(o, o.accent, o.label_size)
-        ),
-        "macro.series.trend": StyleBundle(
-            stroke=Stroke(color=o.muted, width=o.secondary_width, dash=DashStyle.DASHED),
-            text=_text(o, o.muted, o.label_size),
-        ),
-        "macro.recession": StyleBundle(
-            fill=Fill(color=o.fill_faint, opacity=0.4), stroke=Stroke(width=0)
-        ),
-        "macro.gap.positive": StyleBundle(
-            fill=Fill(color=o.primary, opacity=0.4), stroke=Stroke(width=0)
-        ),
-        "macro.gap.negative": StyleBundle(
-            fill=Fill(color=o.intervention, opacity=0.4), stroke=Stroke(width=0)
-        ),
-        "macro.turning.peak": StyleBundle(
-            marker=Marker(color=o.accent, size=o.marker_size, shape="^"), text=small
-        ),
-        "macro.turning.trough": StyleBundle(
-            marker=Marker(color=o.secondary, size=o.marker_size, shape="v"), text=small
         ),
     }
     for name, color in curves.items():

@@ -4,25 +4,18 @@ from __future__ import annotations
 
 import re
 from collections.abc import Iterator
-from datetime import date
 from pathlib import Path
 
 import pytest
 
-from macro_viz import Config, TimeSeries
-from macro_viz.accounts import GDPComponents, analyze_gdp_components, analyze_labor_market
-from macro_viz.cycles import analyze_business_cycle
-from macro_viz.visuals import (
-    business_cycle_canvas,
-    gdp_decomposition_canvas,
-    unemployment_rate_canvas,
-)
+from macro_viz import Config
+from macro_viz.keynesian import ConsumptionFunction, KeynesianCross
+from macro_viz.visuals import keynesian_cross_canvas
 
 SOURCE = Path(__file__).parents[1] / "src" / "macro_viz"
 FONT_NAMES = re.compile(
     r"\b(pagella|dejavu|helvetica|arial|times new roman|noto|georgia|courier)\b", re.IGNORECASE
 )
-DATES = tuple(date(year, 1, 1) for year in range(2019, 2025))
 
 
 @pytest.fixture(autouse=True)
@@ -53,15 +46,14 @@ def test_source_names_no_font() -> None:
     assert offenders == []
 
 
-def test_a_title_argument_reaches_the_figure() -> None:
-    result = analyze_gdp_components(GDPComponents(60, 20, 25, -5, "billions"))
+def _keynesian() -> KeynesianCross:
+    return KeynesianCross(ConsumptionFunction(20, 0.6), investment=20, government=30, taxes=20)
 
+
+def test_a_title_argument_reaches_the_figure() -> None:
+    assert keynesian_cross_canvas(_keynesian()).spec.title is None
     titles = {
-        title: next(
-            layer.text  # type: ignore[attr-defined]
-            for layer in gdp_decomposition_canvas(result, title=title).snapshot().layers
-            if layer.id == "macro.title"
-        )
+        title: keynesian_cross_canvas(_keynesian(), title=title).spec.title
         for title in ("First", "Second")
     }
 
@@ -69,31 +61,31 @@ def test_a_title_argument_reaches_the_figure() -> None:
 
 
 def test_changing_the_economics_changes_the_figure() -> None:
-    def first_level(consumption: float) -> tuple[object, ...]:
-        result = analyze_gdp_components(GDPComponents(consumption, 20, 25, -5, "billions"))
-        layers = gdp_decomposition_canvas(result).snapshot().layers
+    def demand_path(propensity: float) -> object:
+        model = KeynesianCross(ConsumptionFunction(20, propensity), 20, 30, 20)
+        layers = keynesian_cross_canvas(model, x_max=300).snapshot().layers
         return next(
-            layer.boundary  # type: ignore[attr-defined]
+            layer.path  # type: ignore[attr-defined]
             for layer in layers
-            if layer.id == "macro.accounts.gdp.component.consumption"
+            if layer.id == "macro.keynesian.demand"
         )
 
-    assert first_level(60) != first_level(70)
+    assert demand_path(0.5) != demand_path(0.7)
 
 
-def test_the_y_title_and_series_names_come_from_the_data() -> None:
-    def labels(unit: str, name: str) -> set[object]:
-        force = TimeSeries("Force", DATES, (100, 101, 102, 103, 104, 105), unit)
-        employed = TimeSeries("Employed", DATES, (95, 96, 97, 98, 99, 100), unit)
-        result = analyze_labor_market(force, employed, unemployment_rate_name=name)
-        layers = unemployment_rate_canvas(result).snapshot().layers
-        return {
-            layer.text  # type: ignore[attr-defined]
-            for layer in layers
-            if layer.id.endswith(".label")
-        }
+def test_axis_ranges_and_sample_counts_are_arguments() -> None:
+    model = _keynesian()
+    coarse = keynesian_cross_canvas(model, x_max=300, samples=5)
+    fine = keynesian_cross_canvas(model, x_max=300, samples=50)
 
-    assert labels("millions", "Rate A") != labels("thousands", "Rate B")
+    def length(canvas: object) -> int:
+        layers = canvas.snapshot().layers  # type: ignore[attr-defined]
+        demand = next(item for item in layers if item.id == "macro.keynesian.demand")
+        return len(demand.path)
+
+    assert length(coarse) < length(fine)
+    assert keynesian_cross_canvas(model, x_max=300).spec.x_max == 300
+    assert keynesian_cross_canvas(model, x_max=400).spec.x_max == 400
 
 
 def test_widths_and_sizes_come_from_the_settings() -> None:
@@ -109,12 +101,3 @@ def test_widths_and_sizes_come_from_the_settings() -> None:
         "macro.curve.primary", fallback_category="path"
     )
     assert role.stroke is not None and role.stroke.width == 1.5
-
-
-def test_business_cycle_range_follows_the_data() -> None:
-    def top(scale: float) -> float:
-        output = TimeSeries("Output", DATES, tuple(100 * scale + i for i in range(6)), "units")
-        trend = TimeSeries("Trend", DATES, tuple(100 * scale + i for i in range(6)), "units")
-        return business_cycle_canvas(analyze_business_cycle(output, trend=trend)).spec.y_max
-
-    assert top(1) < top(10)
