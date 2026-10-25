@@ -4,15 +4,19 @@ from __future__ import annotations
 
 from bisect import bisect_left, bisect_right
 
-from mosaickit import Canvas, FillLayer, MarkerLayer, PathLayer, TextLayer
-from mosaickit.styles.nudge import Nudge
+from mosaickit import Canvas, FillLayer, MarkerLayer, PointLabelLayer
 
 from macro_viz.cycles.models import BusinessCycleResult, TurningPointKind
-from macro_viz.visuals._common import dated_series_canvas, observed_range
+from macro_viz.i18n import text
+from macro_viz.visuals._kit import DEFAULT_MARKS, nice_bounds
+from macro_viz.visuals._series import dated_series_canvas, observed_range
+
+BAR_HALF_WIDTH = 0.38
+"""Half the width of an output-gap bar, in observation units."""
 
 
-def _recession_layers(result: BusinessCycleResult) -> list[FillLayer]:
-    low, high = observed_range((result.output, result.trend))
+def _recession_layers(result: BusinessCycleResult, y_range: tuple[float, float]) -> list[FillLayer]:
+    low, high = y_range
     layers = []
     for index, recession in enumerate(result.recessions):
         left = bisect_left(result.output.dates, recession.start)
@@ -35,8 +39,8 @@ def _recession_layers(result: BusinessCycleResult) -> list[FillLayer]:
     return layers
 
 
-def _turning_layers(result: BusinessCycleResult) -> list[MarkerLayer | TextLayer]:
-    layers: list[MarkerLayer | TextLayer] = []
+def _turning_layers(result: BusinessCycleResult) -> list[MarkerLayer | PointLabelLayer]:
+    layers: list[MarkerLayer | PointLabelLayer] = []
     date_to_index = {period: index for index, period in enumerate(result.output.dates)}
     counts = {TurningPointKind.PEAK: 0, TurningPointKind.TROUGH: 0}
     for point in result.turning_points:
@@ -47,35 +51,40 @@ def _turning_layers(result: BusinessCycleResult) -> list[MarkerLayer | TextLayer
         role = f"macro.turning.{point.kind.value}"
         layers.append(MarkerLayer(((index, point.value),), id=root, role=role))
         layers.append(
-            TextLayer(
+            PointLabelLayer(
                 (index, point.value),
-                "Peak" if point.kind is TurningPointKind.PEAK else "Trough",
+                text(f"label.{point.kind.value}"),
                 id=f"{root}.label",
                 role=role,
-                anchor="bottom" if point.kind is TurningPointKind.PEAK else "top",
-                nudge=Nudge(dy=6 if point.kind is TurningPointKind.PEAK else -6),
             )
         )
     return layers
 
 
-def business_cycle_canvas(result: BusinessCycleResult, *, title: str | None = None) -> Canvas:
+def business_cycle_canvas(
+    result: BusinessCycleResult, *, title: str | None = None, **options: object
+) -> Canvas:
     """Draw output, trend, turning points, and recession shading."""
+    low, high = observed_range((result.output, result.trend))
+    count = int(options.get("value_marks_count", DEFAULT_MARKS))  # type: ignore[call-overload]
+    y_low, y_high, _ = nice_bounds(low, high, count)
     return dated_series_canvas(
         (
-            (result.output, "macro.cycles.output", "macro.series.primary", result.output.name),
-            (result.trend, "macro.cycles.trend", "macro.series.trend", "Trend"),
+            (result.output, "macro.cycles.output", "macro.series.secondary"),
+            (result.trend, "macro.cycles.trend", "macro.series.trend"),
         ),
         title=title,
-        before=_recession_layers(result),
+        before=_recession_layers(result, (y_low, y_high)),
         after=_turning_layers(result),
+        **options,  # type: ignore[arg-type]
     )
 
 
-def output_gap_canvas(result: BusinessCycleResult, *, title: str | None = None) -> Canvas:
-    """Draw percentage output gaps as positive and negative bars around zero."""
+def output_gap_canvas(
+    result: BusinessCycleResult, *, title: str | None = None, **options: object
+) -> Canvas:
+    """Draw percentage output gaps as positive and negative bars around a zero line."""
     bars = []
-    half_width = 0.38
     for index, value in enumerate(result.output_gap.values):
         if value is None or value == 0:
             continue
@@ -84,31 +93,19 @@ def output_gap_canvas(result: BusinessCycleResult, *, title: str | None = None) 
         bars.append(
             FillLayer(
                 (
-                    (index - half_width, 0),
-                    (index + half_width, 0),
-                    (index + half_width, value),
-                    (index - half_width, value),
+                    (index - BAR_HALF_WIDTH, 0),
+                    (index + BAR_HALF_WIDTH, 0),
+                    (index + BAR_HALF_WIDTH, value),
+                    (index - BAR_HALF_WIDTH, value),
                 ),
                 id=f"macro.cycles.output.gap.{direction}.{index}",
                 role=role,
             )
         )
-    zero = PathLayer(
-        ((0, 0), (max(len(result.output_gap.dates) - 1, 1), 0)),
-        id="macro.cycles.output.gap.zero",
-        role="macro.guide",
-    )
+    options.setdefault("include_zero", True)
     return dated_series_canvas(
-        (
-            (
-                result.output_gap,
-                "macro.cycles.output.gap",
-                "macro.series.primary",
-                "Output gap",
-            ),
-        ),
+        ((result.output_gap, "macro.cycles.output.gap", "macro.series.secondary"),),
         title=title,
-        include_zero=True,
         before=bars,
-        after=(zero,),
+        **options,  # type: ignore[arg-type]
     )

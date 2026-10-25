@@ -9,10 +9,11 @@ from macro_viz.cycles.models import (
     TurningPointKind,
 )
 from macro_viz.errors import ValidationError
+from macro_viz.i18n import text
 from macro_viz.series import Observation, TimeSeries
 
 
-def linear_trend(output: TimeSeries) -> TimeSeries:
+def linear_trend(output: TimeSeries, *, name: str | None = None) -> TimeSeries:
     """Fit an OLS linear trend against calendar-day ordinals, ignoring missing values."""
     observed = [
         (float(period.toordinal()), value)
@@ -29,7 +30,7 @@ def linear_trend(output: TimeSeries) -> TimeSeries:
     slope = sum((x - x_mean) * (value - y_mean) for x, value in observed) / denominator
     intercept = y_mean - slope * x_mean
     return TimeSeries(
-        name=f"{output.name} trend",
+        name=name or text("series.trend_of", name=output.name),
         dates=output.dates,
         values=tuple(intercept + slope * period.toordinal() for period in output.dates),
         unit=output.unit,
@@ -57,6 +58,7 @@ def analyze_business_cycle(
     *,
     trend: TimeSeries | None = None,
     recessions: tuple[RecessionPeriod, ...] = (),
+    gap_name: str | None = None,
 ) -> BusinessCycleResult:
     """Combine output, trend, percentage gaps, turning points, and recession metadata."""
     resolved_trend = trend or linear_trend(output)
@@ -78,10 +80,10 @@ def analyze_business_cycle(
         else:
             gaps.append(100 * (actual - potential) / potential)
     gap = TimeSeries(
-        name="Output gap",
+        name=gap_name or text("series.output_gap"),
         dates=output.dates,
         values=tuple(gaps),
-        unit="percent",
+        unit=text("unit.percent"),
     )
     return BusinessCycleResult(
         output=output,

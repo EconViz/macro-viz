@@ -1,43 +1,123 @@
-"""The ``[macro.*]`` schema for the shared ``econ-viz.toml`` file."""
+"""The ``[macro.*]`` schema for the shared ``econ-viz.toml`` file.
+
+mosaickit reads and checks the file (see ``mosaickit.econ_toml``); this module only
+declares what macro-viz takes from it. The shared top level sets the starting colour model
+(``base``), the fonts and the axis and label colours; macro-viz's own settings live in the
+``[macro]`` table::
+
+    base = "manual"           # shared theme to start from (mosaickit.themes)
+
+    [font]
+    text = "serif"
+    math = "fonts/texgyrepagella-math.otf"
+
+    [fonts]
+    serif = ["fonts/texgyrepagella-regular.otf", "fonts/texgyrepagella-italic.otf"]
+
+    [macro]
+    palette = "manual"        # colour model for macro-viz only; wins over base
+    language = "zh-TW"        # language of built-in figure text
+
+    [macro.color]             # any colour role
+    primary = "blue"
+
+    [macro.stroke]            # line widths in points
+    curve = 3.5
+
+    [macro.marker]
+    point = 6.5               # equilibrium dot diameter in points
+
+    [macro.text]
+    scale = 1.5               # multiplies every text size
+
+    [macro.label.point]       # move whole groups of labels (see macro_viz.label_groups)
+    top = "2pt"               # also bottom, left, right; pt, mm, cm or in, no em
+
+Load it once and every figure uses it::
+
+    from macro_viz import Config
+    Config.load("econ-viz.toml").use()
+
+Relative paths are resolved against the file's directory. Anything left out keeps the
+built-in default.
+"""
 
 from __future__ import annotations
 
-from dataclasses import dataclass, field, replace
+from dataclasses import dataclass, field, make_dataclass, replace
 from pathlib import Path
 from typing import Any, cast
 
 from mosaickit import Config as MosaicConfig
 from mosaickit import MathFont, TextFonts, econ_toml
+from mosaickit.styles.nudge import Nudge, nudge_from
 from mosaickit.themes import get_tokens
 
+from macro_viz.i18n import DEFAULT_LANGUAGE, LANGUAGES
+from macro_viz.label_groups import LABEL_GROUPS, LABEL_SIDES
 from macro_viz.themes import ThemeOptions, build_theme, list_themes, options_from_tokens
 
+_DIRECTIONS = {"top": "up", "bottom": "down", "left": "left", "right": "right"}
+_COLOR_FIELDS = (
+    "background",
+    "axis",
+    "label",
+    "primary",
+    "secondary",
+    "tertiary",
+    "accent",
+    "intervention",
+    "muted",
+)
+_STROKES = {
+    "curve": "curve_width",
+    "shifted": "shifted_width",
+    "arrow": "arrow_width",
+    "series": "line_width",
+    "secondary": "secondary_width",
+    "guide": "guide_width",
+}
 
-@dataclass(frozen=True, slots=True)
-class _Colors:
-    background: str | None = None
-    axis: str | None = None
-    label: str | None = None
-    primary: str | None = None
-    secondary: str | None = None
-    tertiary: str | None = None
-    accent: str | None = None
-    intervention: str | None = None
-    muted: str | None = None
+_Colors = make_dataclass(
+    "_Colors",
+    [(name, "str | None", field(default=None)) for name in _COLOR_FIELDS],
+    frozen=True,
+    slots=True,
+)
+_Nudges = make_dataclass(
+    "_Nudges",
+    [
+        (f"{group}_{side}", "float | None", field(default=None))
+        for group in LABEL_GROUPS
+        for side in LABEL_SIDES
+    ],
+    frozen=True,
+    slots=True,
+)
+_Sizes = make_dataclass(
+    "_Sizes",
+    [
+        *((option, "float | None", field(default=None)) for option in _STROKES.values()),
+        ("marker_size", "float | None", field(default=None)),
+        ("point_diameter", "float | None", field(default=None)),
+        ("text_scale", "float | None", field(default=None)),
+    ],
+    frozen=True,
+    slots=True,
+)
 
 
 @dataclass(frozen=True, slots=True)
 class _Draft:
     base: str
     palette: str | None = None
+    language: str = DEFAULT_LANGUAGE
     font: str = "sans"
     fonts: TextFonts | None = None
     math_font: MathFont | None = None
-    colors: _Colors = field(default_factory=_Colors)
-    line_width: float | None = None
-    secondary_width: float | None = None
-    guide_width: float | None = None
-    marker_size: float | None = None
+    colors: Any = field(default_factory=_Colors)
+    sizes: Any = field(default_factory=_Sizes)
+    nudges: Any = field(default_factory=_Nudges)
 
 
 @dataclass(frozen=True, slots=True)
@@ -47,6 +127,8 @@ class Settings:
     options: ThemeOptions
     fonts: TextFonts | None = None
     math_font: MathFont | None = None
+    language: str = DEFAULT_LANGUAGE
+    label_nudges: dict[str, Nudge] = field(default_factory=dict, hash=False)
 
     @property
     def theme(self):  # type: ignore[no-untyped-def]
@@ -70,43 +152,43 @@ def _math_font(value: Any, ctx: econ_toml.Context) -> MathFont:
     return MathFont(Path(value))
 
 
+def _label_nudges(nudges: Any) -> dict[str, Nudge]:
+    """The nudge of each group the file moves; a group set to no move is left out."""
+    found: dict[str, Nudge] = {}
+    for group in LABEL_GROUPS:
+        nudge = nudge_from(**{side: getattr(nudges, f"{group}_{side}") for side in LABEL_SIDES})
+        if not nudge.is_zero:
+            found[group] = nudge
+    return found
+
+
 def _finish(draft: _Draft, ctx: econ_toml.Context) -> Settings:
     del ctx
     tokens = get_tokens(draft.palette or draft.base)
     options = options_from_tokens(tokens, font=draft.font)
-    options = replace(
-        options,
-        background=draft.colors.background or options.background,
-        axis=draft.colors.axis or options.axis,
-        label=draft.colors.label or options.label,
-        primary=draft.colors.primary or options.primary,
-        secondary=draft.colors.secondary or options.secondary,
-        tertiary=draft.colors.tertiary or options.tertiary,
-        accent=draft.colors.accent or options.accent,
-        intervention=draft.colors.intervention or options.intervention,
-        muted=draft.colors.muted or options.muted,
-        line_width=draft.line_width or options.line_width,
-        secondary_width=draft.secondary_width or options.secondary_width,
-        guide_width=draft.guide_width or options.guide_width,
-        marker_size=(
-            draft.marker_size**2 if draft.marker_size is not None else options.marker_size
-        ),
+    colors = {
+        name: value for name in _COLOR_FIELDS if (value := getattr(draft.colors, name)) is not None
+    }
+    sizes = {
+        option: value
+        for option in (*_STROKES.values(), "text_scale")
+        if (value := getattr(draft.sizes, option)) is not None
+    }
+    if draft.sizes.marker_size is not None:
+        sizes["marker_size"] = draft.sizes.marker_size**2
+    if draft.sizes.point_diameter is not None:
+        sizes["point_size"] = draft.sizes.point_diameter**2
+    options = replace(options, **colors, **sizes)
+    return Settings(
+        options=options,
+        fonts=draft.fonts,
+        math_font=draft.math_font,
+        language=draft.language,
+        label_nudges=_label_nudges(draft.nudges),
     )
-    return Settings(options=options, fonts=draft.fonts, math_font=draft.math_font)
 
 
 _BASES = {name: _base(name) for name in list_themes()}
-_COLOR_FIELDS = (
-    "background",
-    "axis",
-    "label",
-    "primary",
-    "secondary",
-    "tertiary",
-    "accent",
-    "intervention",
-    "muted",
-)
 
 SCHEMA = econ_toml.register(
     econ_toml.Schema(
@@ -114,11 +196,20 @@ SCHEMA = econ_toml.register(
         base=_BASES,
         fields={
             "palette": econ_toml.transform("palette", _palette),
+            "language": econ_toml.choice("language", LANGUAGES),
             **{f"color.{name}": econ_toml.color(f"colors.{name}") for name in _COLOR_FIELDS},
-            "stroke.series": econ_toml.positive("line_width"),
-            "stroke.secondary": econ_toml.positive("secondary_width"),
-            "stroke.guide": econ_toml.positive("guide_width"),
-            "marker.turning_point": econ_toml.positive("marker_size"),
+            **{
+                f"stroke.{name}": econ_toml.positive(f"sizes.{option}")
+                for name, option in _STROKES.items()
+            },
+            "marker.turning_point": econ_toml.positive("sizes.marker_size"),
+            "marker.point": econ_toml.positive("sizes.point_diameter"),
+            "text.scale": econ_toml.positive("sizes.text_scale"),
+            **{
+                f"label.{group}.{side}": econ_toml.length(f"nudges.{group}_{side}")
+                for group in LABEL_GROUPS
+                for side in LABEL_SIDES
+            },
         },
         shared={
             "font": "font",
@@ -130,12 +221,23 @@ SCHEMA = econ_toml.register(
         },
         finalize=_finish,
         docs={
-            "palette": "shared colour theme for macro-viz only",
+            "palette": "shared colour theme for macro-viz only; wins over base",
+            "language": "language of built-in figure text (en, zh-TW, zh-CN)",
             **{f"color.{name}": "unset keeps the shared theme colour" for name in _COLOR_FIELDS},
-            "stroke.series": "primary series width in points",
-            "stroke.secondary": "secondary series width in points",
-            "stroke.guide": "guide width in points",
+            "stroke.curve": "theory curve width in points (default 3.5)",
+            "stroke.shifted": "old, shifted-from curve width in points (default 1.0)",
+            "stroke.arrow": "movement arrow width in points (default 1.0)",
+            "stroke.series": "primary series width in points (default 2.2)",
+            "stroke.secondary": "secondary series width in points (default 1.6)",
+            "stroke.guide": "guide width in points (default 1.0)",
             "marker.turning_point": "turning-point marker diameter in points",
+            "marker.point": "equilibrium dot diameter in points (default 6.5)",
+            "text.scale": "multiplies every text size (default 1.0)",
+            **{
+                f"label.{group}.{side}": f"move {group} labels {_DIRECTIONS[side]} (a length)"
+                for group in LABEL_GROUPS
+                for side in LABEL_SIDES
+            },
         },
     )
 )

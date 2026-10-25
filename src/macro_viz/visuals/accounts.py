@@ -2,16 +2,7 @@
 
 from __future__ import annotations
 
-from mosaickit import (
-    AxisMarkLayer,
-    AxisSpec,
-    Canvas,
-    CanvasSpec,
-    FillLayer,
-    PathLayer,
-    TextLayer,
-    build_axes,
-)
+from mosaickit import AxisMarkLayer, Canvas, CanvasGrid, FillLayer, PathLayer, TextLayer
 from mosaickit.styles.nudge import Nudge
 
 from macro_viz.accounts.models import (
@@ -22,16 +13,35 @@ from macro_viz.accounts.models import (
 )
 from macro_viz.errors import ValidationError
 from macro_viz.series import TimeSeries
-from macro_viz.visuals._common import (
-    axis_label_layers,
-    dated_series_canvas,
-    new_canvas,
-    value_mark_layers,
-)
+from macro_viz.visuals._kit import axes_layers, canvas_spec, new_canvas, title_layer
+from macro_viz.visuals._series import SERIES_HEIGHT, SERIES_WIDTH, dated_series_canvas
+
+BAR_HALF_WIDTH = 0.32
+"""Half the width of a waterfall bar, in category units."""
+
+HEADROOM_SHARE = 0.1
+"""Share of the waterfall's height left above its highest level, for the arrow tip."""
+
+INSIDE_LABEL_SHARE = 0.08
+"""A waterfall bar shorter than this share of the axis gets its value outside the bar."""
+
+OUTSIDE_LABEL_GAP = 4.0
+"""Gap in points between a short bar and its value."""
 
 
-def gdp_decomposition_canvas(result: GDPDecompositionResult, *, title: str | None = None) -> Canvas:
-    """Draw the expenditure identity as a waterfall ending at total GDP."""
+def gdp_decomposition_canvas(
+    result: GDPDecompositionResult,
+    *,
+    title: str | None = None,
+    y_label: str | None = None,
+    width: float = SERIES_WIDTH,
+    height: float = SERIES_HEIGHT,
+) -> Canvas:
+    """Draw the expenditure identity as a waterfall ending at total GDP.
+
+    Values are written on the bars, so the value axis carries no marks. ``y_label`` defaults
+    to the unit of the components.
+    """
     c = result.components
     components = (
         ("consumption", "C", c.consumption, "macro.accounts.component.consumption"),
@@ -43,30 +53,16 @@ def gdp_decomposition_canvas(result: GDPDecompositionResult, *, title: str | Non
     for _, _, value, _ in components:
         levels.append(levels[-1] + value)
     low, high = min(0.0, *levels), max(0.0, *levels)
-    padding = max((high - low) * 0.1, 1.0)
-    x_range, y_range = (0.4, 5.6), (low - padding, high + padding)
-    canvas = new_canvas(
-        CanvasSpec(
-            x_range=x_range,
-            y_range=y_range,
-            width=7.0,
-            height=4.8,
-            x_label="Component",
-            y_label=c.unit,
-            title=title,
-        )
-    )
-    canvas.extend(build_axes(AxisSpec(x_range), AxisSpec(y_range)))
-    canvas.extend(value_mark_layers(y_range))
+    y_range = (low, high + (high - low) * HEADROOM_SHARE)
+    last = len(components) + 1
+    x_range = (0.0, last + 0.6)
+    canvas = new_canvas(canvas_spec(x_range, y_range, width=width, height=height, title=None))
     canvas.extend(
-        axis_label_layers(
-            x_range,
-            y_range,
-            x_label="Component",
-            y_label=c.unit,
-            x_id="macro.axis.component.label",
-        )
+        axes_layers(x_range, y_range, x_label=None, y_label=c.unit if y_label is None else y_label)
     )
+    if title:
+        canvas.add(title_layer(x_range, y_range, title, above_label=True))
+    span = y_range[1] - y_range[0]
     running = 0.0
     for index, (name, symbol, value, role) in enumerate(components, start=1):
         next_level = running + value
@@ -74,46 +70,38 @@ def gdp_decomposition_canvas(result: GDPDecompositionResult, *, title: str | Non
         canvas.add(
             FillLayer(
                 (
-                    (index - 0.32, bottom),
-                    (index + 0.32, bottom),
-                    (index + 0.32, top),
-                    (index - 0.32, top),
+                    (index - BAR_HALF_WIDTH, bottom),
+                    (index + BAR_HALF_WIDTH, bottom),
+                    (index + BAR_HALF_WIDTH, top),
+                    (index - BAR_HALF_WIDTH, top),
                 ),
                 id=f"macro.accounts.gdp.component.{name}",
                 role=role,
             )
         )
-        label_position = (index, (bottom + top) / 2)
-        label_anchor = "center"
-        label_nudge = None
-        if value < 0:
-            label_position = (index, next_level)
-            label_anchor = "top"
-            label_nudge = Nudge(dy=-7)
+        short = abs(value) < INSIDE_LABEL_SHARE * span
         canvas.add(
             TextLayer(
-                label_position,
+                (index, top if short else (bottom + top) / 2),
                 f"{value:g}",
                 id=f"macro.accounts.gdp.component.{name}.label",
-                role=role,
-                anchor=label_anchor,
-                nudge=label_nudge,
+                role="macro.mark",
+                anchor="bottom" if short else "center",
+                nudge=Nudge(dy=OUTSIDE_LABEL_GAP) if short else None,
             )
         )
         canvas.add(
             AxisMarkLayer(
-                "x",
-                index,
-                symbol,
-                math=True,
-                id=f"macro.accounts.gdp.axis.{name}",
-                role="axes",
+                "x", index, symbol, math=True, id=f"macro.accounts.gdp.axis.{name}", role="axes"
             )
         )
         if index < len(components):
             canvas.add(
                 PathLayer(
-                    ((index + 0.32, next_level), (index + 0.68, next_level)),
+                    (
+                        (index + BAR_HALF_WIDTH, next_level),
+                        (index + 1 - BAR_HALF_WIDTH, next_level),
+                    ),
                     id=f"macro.accounts.gdp.guide.{name}",
                     role="macro.guide",
                 )
@@ -121,100 +109,121 @@ def gdp_decomposition_canvas(result: GDPDecompositionResult, *, title: str | Non
         running = next_level
     canvas.add(
         FillLayer(
-            ((4.68, 0), (5.32, 0), (5.32, result.total), (4.68, result.total)),
+            (
+                (last - BAR_HALF_WIDTH, 0),
+                (last + BAR_HALF_WIDTH, 0),
+                (last + BAR_HALF_WIDTH, result.total),
+                (last - BAR_HALF_WIDTH, result.total),
+            ),
             id="macro.accounts.gdp.total",
             role="macro.accounts.component.total",
         )
     )
     canvas.add(
         TextLayer(
-            (5, result.total / 2),
+            (last, result.total / 2),
             f"{result.total:g}",
             id="macro.accounts.gdp.total.label",
-            role="macro.accounts.component.total",
+            role="macro.mark",
         )
     )
     canvas.add(
-        AxisMarkLayer("x", 5, "Y", math=True, id="macro.accounts.gdp.axis.total", role="axes")
+        AxisMarkLayer("x", last, "Y", math=True, id="macro.accounts.gdp.axis.total", role="axes")
     )
     return canvas
 
 
-def gdp_levels_canvas(result: GDPSeriesResult, *, title: str | None = None) -> Canvas:
-    """Draw aligned nominal and real GDP levels."""
+def gdp_levels_canvas(
+    result: GDPSeriesResult, *, title: str | None = None, **options: object
+) -> Canvas:
+    """Draw aligned nominal and real GDP levels, which share a unit and a magnitude."""
     return dated_series_canvas(
         (
-            (result.nominal, "macro.accounts.gdp.nominal", "macro.series.primary", "Nominal GDP"),
-            (result.real, "macro.accounts.gdp.real", "macro.series.secondary", "Real GDP"),
+            (result.nominal, "macro.accounts.gdp.nominal", "macro.series.primary"),
+            (result.real, "macro.accounts.gdp.real", "macro.series.secondary"),
         ),
         title=title,
+        **options,  # type: ignore[arg-type]
     )
 
 
-def gdp_deflator_canvas(result: GDPSeriesResult, *, title: str | None = None) -> Canvas:
+def gdp_deflator_canvas(
+    result: GDPSeriesResult, *, title: str | None = None, **options: object
+) -> Canvas:
     """Draw the GDP deflator while retaining its base metadata in the result."""
-    return price_index_canvas(result.deflator, title=title)
+    return price_index_canvas(result.deflator, title=title, **options)
 
 
-def price_index_canvas(price_index: TimeSeries, *, title: str | None = None) -> Canvas:
+def price_index_canvas(
+    price_index: TimeSeries, *, title: str | None = None, **options: object
+) -> Canvas:
     """Draw CPI or another explicitly based price index."""
     if price_index.index_base is None:
         raise ValidationError("price-index figures require index-base metadata")
     return dated_series_canvas(
-        ((price_index, "macro.accounts.price.index", "macro.series.primary", price_index.name),),
+        ((price_index, "macro.accounts.price.index", "macro.series.secondary"),),
         title=title,
+        **options,  # type: ignore[arg-type]
     )
 
 
-def inflation_canvas(result: InflationResult, *, title: str | None = None) -> Canvas:
-    """Draw the inflation rate derived from a price index."""
+def inflation_canvas(
+    result: InflationResult, *, title: str | None = None, **options: object
+) -> Canvas:
+    """Draw the inflation rate derived from a price index, with a zero line when it crosses."""
     return dated_series_canvas(
-        (
-            (
-                result.inflation_rate,
-                "macro.accounts.inflation.rate",
-                "macro.series.accent",
-                "Inflation",
-            ),
-        ),
+        ((result.inflation_rate, "macro.accounts.inflation.rate", "macro.series.secondary"),),
         title=title,
-        include_zero=True,
+        **options,  # type: ignore[arg-type]
     )
 
 
-def labor_market_canvas(result: LaborMarketResult, *, title: str | None = None) -> Canvas:
-    """Draw employment and unemployment levels in their common unit."""
-    return dated_series_canvas(
-        (
-            (
-                result.employment,
-                "macro.accounts.labor.employment",
-                "macro.series.primary",
-                "Employment",
-            ),
-            (
-                result.unemployment,
-                "macro.accounts.labor.unemployment",
-                "macro.series.accent",
-                "Unemployment",
-            ),
-        ),
+def labor_market_canvas(
+    result: LaborMarketResult,
+    *,
+    title: str | None = None,
+    width: float = SERIES_WIDTH,
+    height: float = SERIES_HEIGHT,
+    **options: object,
+) -> CanvasGrid:
+    """Draw employment above unemployment, each with its own axis.
+
+    The two levels differ by an order of magnitude, so they never share an axis: two stacked
+    panels share only the dates. ``title`` heads the upper panel; ``height`` is the height
+    of each panel.
+    """
+    upper = dated_series_canvas(
+        ((result.employment, "macro.accounts.labor.employment", "macro.series.secondary"),),
         title=title,
-        include_zero=True,
+        show_dates=False,
+        width=width,
+        height=height,
+        **options,  # type: ignore[arg-type]
     )
+    lower = dated_series_canvas(
+        ((result.unemployment, "macro.accounts.labor.unemployment", "macro.series.primary"),),
+        title=None,
+        include_zero=True,
+        width=width,
+        height=height,
+        **options,  # type: ignore[arg-type]
+    )
+    return CanvasGrid([[upper], [lower]])
 
 
-def unemployment_rate_canvas(result: LaborMarketResult, *, title: str | None = None) -> Canvas:
+def unemployment_rate_canvas(
+    result: LaborMarketResult, *, title: str | None = None, **options: object
+) -> Canvas:
     """Draw unemployment as a percentage of the labour force."""
+    options.setdefault("include_zero", True)
     return dated_series_canvas(
         (
             (
                 result.unemployment_rate,
                 "macro.accounts.labor.unemployment.rate",
-                "macro.series.accent",
-                "Unemployment rate",
+                "macro.series.secondary",
             ),
         ),
         title=title,
-        include_zero=True,
+        **options,  # type: ignore[arg-type]
     )

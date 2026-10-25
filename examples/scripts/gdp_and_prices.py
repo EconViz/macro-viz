@@ -2,9 +2,10 @@
 
 from __future__ import annotations
 
+from collections.abc import Sequence
 from datetime import date
 
-from common import prepare_manual_output
+from common import load_example, setup
 
 from macro_viz import IndexBase, TimeSeries
 from macro_viz.accounts import analyze_gdp_series, calculate_inflation
@@ -16,35 +17,22 @@ from macro_viz.visuals import (
 )
 
 
-def main() -> None:
-    output = prepare_manual_output()
-    dates = tuple(date(year, 1, 1) for year in range(2019, 2025))
-    nominal = TimeSeries(
-        "Nominal GDP",
-        dates,
-        (1000, 1040, 1113, 1196, 1275, 1365),
-        "billions USD",
-    )
-    real = TimeSeries(
-        "Real GDP",
-        dates,
-        (1000, 1010, 1060, 1100, 1140, 1180),
-        "billions USD",
-    )
+def main(argv: Sequence[str] | None = None) -> None:
+    args, output = setup(__doc__ or "", argv)
+    data = load_example(args.data, "gdp_and_prices")
+    dates = tuple(date(data["start_year"] + k, 1, 1) for k in range(len(data["nominal"])))
+    nominal = TimeSeries(data["nominal_name"], dates, tuple(data["nominal"]), data["unit"])
+    real = TimeSeries(data["real_name"], dates, tuple(data["real"]), data["unit"])
     gdp = analyze_gdp_series(nominal, real, base_period=dates[0])
     cpi = TimeSeries(
-        "CPI",
-        dates,
-        (100, 102, 105, 109, 113, 116),
-        "index",
-        IndexBase(dates[0]),
+        data["cpi_name"], dates, tuple(data["cpi"]), data["index_unit"], IndexBase(dates[0])
     )
     inflation = calculate_inflation(cpi)
-
-    gdp_levels_canvas(gdp, title="Nominal and real GDP").save(output / "gdp_levels.png")
-    gdp_deflator_canvas(gdp, title="GDP deflator").save(output / "gdp_deflator.png")
-    price_index_canvas(cpi, title="Consumer price index").save(output / "cpi.png")
-    inflation_canvas(inflation, title="CPI inflation").save(output / "inflation.png")
+    suffix = args.suffix
+    gdp_levels_canvas(gdp, title=data["title_levels"]).save(output / f"gdp_levels{suffix}")
+    gdp_deflator_canvas(gdp, title=data["title_deflator"]).save(output / f"gdp_deflator{suffix}")
+    price_index_canvas(cpi, title=data["title_cpi"]).save(output / f"cpi{suffix}")
+    inflation_canvas(inflation, title=data["title_inflation"]).save(output / f"inflation{suffix}")
 
 
 if __name__ == "__main__":

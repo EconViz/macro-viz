@@ -1,0 +1,38 @@
+{
+  "en": {
+    "series.gdp_deflator": "GDP deflator",
+    "series.unemployment": "Unemployment",
+    "series.unemployment_rate": "Unemployment rate",
+    "series.output_gap": "Output gap",
+    "series.trend_of": "{name} trend",
+    "series.inflation_of": "{name} inflation",
+    "unit.index": "index",
+    "unit.percent": "percent",
+    "label.peak": "Peak",
+    "label.trough": "Trough"
+  },
+  "zh-TW": {
+    "series.gdp_deflator": "GDP 平減指數",
+    "series.unemployment": "失業人數",
+    "series.unemployment_rate": "失業率",
+    "series.output_gap": "產出缺口",
+    "series.trend_of": "{name}趨勢",
+    "series.inflation_of": "{name}通貨膨脹率",
+    "unit.index": "指數",
+    "unit.percent": "百分比",
+    "label.peak": "高峰",
+    "label.trough": "谷底"
+  },
+  "zh-CN": {
+    "series.gdp_deflator": "GDP 平减指数",
+    "series.unemployment": "失业人数",
+    "series.unemployment_rate": "失业率",
+    "series.output_gap": "产出缺口",
+    "series.trend_of": "{name}趋势",
+    "series.inflation_of": "{name}通货膨胀率",
+    "unit.index": "指数",
+    "unit.percent": "百分比",
+    "label.peak": "高峰",
+    "label.trough": "谷底"
+  }
+}

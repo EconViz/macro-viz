@@ -37,9 +37,15 @@ period. Inflation is the percentage change over the requested observation lag. O
 `100 * (actual - trend) / trend`; turning points are strict local extrema and never bridge a
 missing observation.
 
-Every visual builder accepts `title=None`, returns a MosaicKit `Canvas`, and emits stable
-`macro.*` economic layer IDs. The returned canvas renders and saves through MosaicKit's public
-backend API.
+Every visual builder accepts `title=None` (no title), returns a MosaicKit `Canvas` (a
+`CanvasGrid` for the two-panel labour-market figure), and emits stable `macro.*` economic layer
+IDs. Axes carry arrowheads, value axes start at a rounded bound below the data, dates are
+labelled with `date_format` (default `"%Y"`), and series are named directly at their last
+observation instead of in a legend. Series of different magnitude never share an axis.
+Built-in words (`Peak`, `Trough`, the names of derived series, units) come from a locale table
+keyed by stable ids in English, Traditional Chinese, and Simplified Chinese; every name can also
+be passed in. Nothing else is written into the drawing code: sizes, widths, colours, and fonts
+come from the theme and the settings below.
 
 ## Configuration
 
@@ -53,12 +59,20 @@ base = "default"
 
 [macro]
 palette = "manual"
+language = "zh-TW"        # built-in text: en, zh-TW, zh-CN
 
-[macro.stroke]
+[macro.stroke]            # points
+curve = 3.5
 series = 2.4
 
 [macro.marker]
 turning_point = 7
+
+[macro.text]
+scale = 1.5               # multiplies every text size
+
+[macro.label.curve]       # move whole label groups: point, curve, mark, region, annotation
+top = "2pt"
 ```
 
 Load a file once with `Config.load("econ-viz.toml").use()`. Shared per-figure
@@ -68,11 +82,16 @@ is saved.
 ## Examples
 
 Tracked executable examples live in `examples/scripts`; their generated images are intentionally
-ignored. They select the manual palette explicitly and can be regenerated locally with:
+ignored. Sample data and titles are in `examples/examples.toml`, the manual look (black and white,
+white background, TeX Gyre Pagella, direct labels, arrowed axes) in `examples/econ-viz.toml`.
+Both, the output folder, and the image format are command-line arguments. Regenerate locally with:
 
 ```bash
-uv run python examples/scripts/run_all.py
+uv run python examples/scripts/run_all.py --output examples/output
 ```
+
+The scripts look for the font files in `$MACRO_VIZ_FONT_DIR` and in a TeX Live installation, and
+fall back to the default serif face when they are missing.
 
 ## Scope and architecture
 
