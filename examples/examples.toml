@@ -149,7 +149,6 @@ shifted_sras = false
 steps = ["A", "C", "K"]
 
 [panels.capital]
-capital_after = 1.5
 price_after = 0.8
 rate = 2.0
 is_slope = -0.07

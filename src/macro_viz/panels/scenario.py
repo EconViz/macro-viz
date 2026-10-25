@@ -19,6 +19,12 @@ from dataclasses import dataclass, field, replace
 
 from macro_viz.errors import ValidationError
 from macro_viz.panels.model import MacroEconomy, N, P, R, Shock, W, Y
+from macro_viz.panels.movement import (
+    Curve,
+    CurveMovement,
+    MovementKind,
+    apply_movements,
+)
 from macro_viz.panels.solve import SEARCH_LIMIT, bisect
 
 CLEARING_TOLERANCE = 1e-9
@@ -42,6 +48,15 @@ class Step:
     adjust_expectations: bool = False
     """Let the expected price level catch up: ``pe`` becomes the price that clears the goods
     market, so output returns to its natural level (the long run)."""
+    movements: tuple[CurveMovement, ...] = ()
+    """Direct qualitative curve movements; their visible size comes from the scenario preset."""
+
+    def __post_init__(self) -> None:
+        if len(self.label) != 1 or not self.label.isascii() or not self.label.isalpha():
+            raise ValidationError("a step label must be one ASCII letter (A-Z or a-z)")
+        targets = [(movement.curve, movement.kind) for movement in self.movements]
+        if len(set(targets)) != len(targets):
+            raise ValidationError("a step cannot move the same curve in the same way twice")
 
 
 @dataclass(frozen=True, slots=True)
@@ -123,8 +138,43 @@ class Scenario:
             solved.append(state)
         return tuple(solved)
 
+    def movement_kinds(self) -> Mapping[str, MovementKind]:
+        """Movement semantics for rendering, resolved outside the rendering layer.
+
+        Direct requests are authoritative.  Existing parameter-based scenarios are adapted to
+        the same typed representation for backwards compatibility.
+        """
+        direct = {
+            movement.curve.value: movement.kind
+            for step in self.steps
+            for movement in step.movements
+        }
+        if direct:
+            return direct
+
+        adapted: dict[str, MovementKind] = {}
+        prices = {step.price for step in self.steps if step.price is not None}
+        for step in self.steps:
+            shock = step.shock
+            if shock.capital is not None:
+                adapted[Curve.LABOR_DEMAND.value] = MovementKind.ROTATION
+                adapted[Curve.PRODUCTION.value] = MovementKind.ROTATION
+            if shock.labor_supply_shift is not None or shock.expected_price is not None:
+                adapted[Curve.LABOR_SUPPLY.value] = MovementKind.SHIFT
+            if shock.money is not None:
+                adapted[Curve.LM.value] = MovementKind.SHIFT
+                adapted[Curve.AD.value] = MovementKind.SHIFT
+            if shock.expenditure is not None:
+                adapted[Curve.IS.value] = MovementKind.SHIFT
+                adapted[Curve.AD.value] = MovementKind.SHIFT
+        if len(prices) > 1:
+            adapted[Curve.LABOR_DEMAND.value] = MovementKind.ROTATION
+            adapted[Curve.LM.value] = MovementKind.SHIFT
+        return adapted
+
     def _state(self, position: int, step: Step) -> PanelState:
         economy = step.shock.apply(self.baseline)
+        economy = apply_movements(economy, step.movements)
         if step.adjust_expectations:
             economy = _with_correct_expectations(economy)
         clearing = step.price is None

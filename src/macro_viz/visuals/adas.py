@@ -164,10 +164,9 @@ def aggregate_supply_canvas(
         )
         canvas.add(
             shift_arrow(
-                (SHIFT_ARROW_SHARE * right, supply.price(SHIFT_ARROW_SHARE * right)),
-                (SHIFT_ARROW_SHARE * right, shifted.price(SHIFT_ARROW_SHARE * right)),
+                anchor,
+                (anchor[0], shifted.price(anchor[0])),
                 layer_id="macro.adas.shift",
-                extent=(right, top),
             )
         )
     return canvas
@@ -190,7 +189,7 @@ def aggregate_demand_canvas(
     """Draw aggregate demand and its shifted positions at a given price level.
 
     The curves are named ``AD``, ``AD'``, ``AD''``; at ``price`` (default: the middle of the
-    vertical axis) a dashed arrow runs from ``AD`` to each shifted curve and, when given,
+    vertical axis) an arrow runs from ``AD`` to each shifted curve and, when given,
     ``captions[k]`` names what moved curve ``k``. ``x_max`` and ``y_max`` fix the axes.
     """
     text = Labels(labels)
@@ -227,9 +226,7 @@ def aggregate_demand_canvas(
             )
         )
         start, end = (demand.output(level), level), (shifted.output(level), level)
-        canvas.add(
-            shift_arrow(start, end, layer_id=f"macro.adas.shift{suffix}", extent=(x_max, y_max))
-        )
+        canvas.add(shift_arrow(start, end, layer_id=f"macro.adas.shift{suffix}"))
         if index < len(captions):
             canvas.add(
                 TextLayer(
@@ -266,7 +263,7 @@ def adas_canvas(
     """Draw aggregate supply and demand, their crossing A, and optionally a shock.
 
     ``show_natural_output`` adds the dashed vertical at ``Yn``, the point ``B = (Yn, Pe)`` on AS,
-    and the mark ``Pe``. Given an ``ASADShift`` the moved curve is thin and dashed and the new
+    and the mark ``Pe``. Given an ``ASADShift`` the moved curve is thin and solid and the new
     crossing is A'. ``productivity`` (the level ``A`` of ``N = Y / A``) names the employment
     that goes with equilibrium output below the axis. ``ambiguous_demand`` marks the unknown
     direction of a demand shift with two arrows and question marks.
@@ -369,13 +366,12 @@ def _shift_layers(
             role="macro.curve.secondary.shifted",
             label=text("adas.curve.supply_shifted"),
         )
-        x = SHIFT_ARROW_SHARE * right
+        old = shift.baseline.equilibrium()
         layers.append(
             shift_arrow(
-                (x, shift.baseline.supply.price(x)),
-                (x, post.supply.price(x)),
+                (old.output, old.price),
+                (old.output, post.supply.price(old.output)),
                 layer_id="macro.adas.shift",
-                extent=(right, top),
             )
         )
     else:
@@ -385,13 +381,12 @@ def _shift_layers(
             role="macro.curve.primary.shifted",
             label=text("adas.curve.demand_shifted"),
         )
-        level = SHIFT_ARROW_SHARE * top
+        old = shift.baseline.equilibrium()
         layers.append(
             shift_arrow(
-                (shift.baseline.demand.output(level), level),
-                (post.demand.output(level), level),
+                (old.output, old.price),
+                (post.demand.output(old.price), old.price),
                 layer_id="macro.adas.shift",
-                extent=(right, top),
             )
         )
     if ambiguous:
@@ -449,10 +444,10 @@ def adas_adjustment_canvas(
 ) -> Canvas:
     """Draw the adjustment of AS-AD as expectations catch up.
 
-    Aggregate demand is fixed (a demand shock adds its new position, thin and dashed). The
+    Aggregate demand is fixed (a demand shock adds its new position, thin and solid). The
     starting supply curve stays heavy; every revision of the expected price level adds a thin
     dashed supply curve, and the last is the medium-run supply through natural output. The
-    equilibria are A, A', A'', ... joined by dashed arrows that slide along aggregate demand,
+    equilibria are A, A', A'', ... joined by arrows that slide along aggregate demand,
     ending at the medium-run equilibrium on the dashed vertical at natural output.
     """
     text = Labels(labels)

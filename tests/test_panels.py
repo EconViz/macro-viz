@@ -12,22 +12,32 @@ from mosaickit import CanvasGrid, PathLayer
 
 from macro_viz import Config, ValidationError
 from macro_viz.panels import (
+    ArrowOptions,
+    Curve,
+    CurveOptions,
     Hop,
     IsLm,
     IsLmSketch,
     LinearFunction,
     MacroEconomy,
+    MovementKind,
     PanelLayout,
     PanelSpec,
     QuadraticProduction,
+    RotationDirection,
     Scenario,
+    ShiftDirection,
     Shock,
     Step,
+    axis_lengths,
+    curve_specs,
     five_panel_layout,
     four_panel_layout,
+    shift_arrows,
 )
 from macro_viz.panels.model import N, P, R, W, Y
 from macro_viz.visuals import five_panel_canvas, four_panel_canvas, linked_panels_canvas
+from macro_viz.visuals.panels import _rotation_arrows
 
 
 @pytest.fixture(autouse=True)
@@ -113,6 +123,56 @@ def test_a_shock_to_money_needs_an_islm_block() -> None:
         Shock(money=2.0).apply(economy())
 
 
+def test_direct_curve_movements_apply_one_schematic_preset_and_solve() -> None:
+    base = economy(islm=True)
+    movements = (
+        base.curve(Curve.PRODUCTION).rotate(RotationDirection.OUTWARD),
+        base.curve(Curve.LABOR_DEMAND).rotate(RotationDirection.OUTWARD),
+    )
+    scenario = Scenario(base, (Step("A"), Step("B", movements=movements)))
+    before, after = scenario.solve()
+
+    assert after.economy.capital == pytest.approx(1.5 * before.economy.capital)
+    assert after.values[Y] > before.values[Y]
+    assert after.economy.labor_demand(after.values[N], after.values[P]) == pytest.approx(
+        after.values[W]
+    )
+    assert scenario.movement_kinds() == {
+        "production": MovementKind.ROTATION,
+        "labor_demand": MovementKind.ROTATION,
+    }
+
+
+def test_direct_curve_shift_uses_direction_without_policy_inference() -> None:
+    base = economy(islm=True)
+    assert base.islm is not None
+    scenario = Scenario(
+        base,
+        (Step("A"), Step("B", movements=(base.curve(Curve.LM).shift(ShiftDirection.RIGHT),))),
+    )
+    before, after = scenario.solve()
+
+    before_islm, after_islm = before.economy.islm, after.economy.islm
+    assert before_islm is not None and after_islm is not None
+    assert after_islm.money > before_islm.money
+    assert after.values[R] < before.values[R]
+
+
+def test_curve_rejects_an_unsupported_movement_at_the_api_boundary() -> None:
+    base = economy(islm=True)
+
+    with pytest.raises(ValidationError, match="does not support a rotation"):
+        base.curve(Curve.LM).rotate(RotationDirection.OUTWARD)
+    with pytest.raises(ValidationError, match="needs an IS-LM model"):
+        economy().curve(Curve.LM)
+
+
+@pytest.mark.parametrize("label", ("AA", "1", "甲", "A'"))
+def test_step_label_is_exactly_one_ascii_letter(label: str) -> None:
+    with pytest.raises(ValidationError, match="one ASCII letter"):
+        Step(label)
+
+
 # -- layout -----------------------------------------------------------------------------
 
 
@@ -138,6 +198,7 @@ def test_five_panel_layout_stacks_islm_over_adas() -> None:
     assert (islm.col, islm.cols) == (adas.col, adas.cols)
     assert islm.row < adas.row
     assert layout.panel("labor").col == 0 and layout.panel("labor").row >= islm.rows
+    assert {panel.rows for panel in layout.panels} == {3}
 
 
 # -- alignment --------------------------------------------------------------------------
@@ -211,6 +272,118 @@ def test_projection_reads_the_solved_values() -> None:
     marker = ids["macro.panels.labor.point.A"]
 
     assert marker.points[0] == pytest.approx((a[N], a[W]))  # type: ignore[attr-defined]
+
+
+def test_output_guides_start_at_the_production_function_not_the_y_axis() -> None:
+    scenario = capital_scenario()
+    grid = five_panel_canvas(scenario)
+    production = next(p.canvas for p in grid.placements if p.row == 6 and p.col == 0)
+    guides = [
+        layer.path
+        for layer in production.snapshot().layers
+        if isinstance(layer, PathLayer)
+        and layer.role == "macro.link"
+        and layer.path[0][1] == layer.path[-1][1]
+    ]
+
+    for state in scenario.solve():
+        matching = [path for path in guides if path[0][1] == pytest.approx(state.values[Y])]
+        assert matching
+        assert matching[0][0][0] == pytest.approx(state.values[N])
+
+
+def test_every_translation_arrow_starts_at_an_equilibrium_and_runs_horizontally() -> None:
+    scenario = capital_scenario()
+    states = scenario.solve()
+    layout = five_panel_layout()
+    ranges = axis_lengths(states, extent=1.7)
+    expected_starts = {
+        "islm": [(states[0].values[Y], states[0].values[R])],
+        "adas": [(states[0].values[Y], states[0].values[P])],
+    }
+
+    for panel_key, starts in expected_starts.items():
+        panel = layout.panel(panel_key)
+        curves = curve_specs(panel, scenario, states, ranges, CurveOptions())
+        arrows = shift_arrows(
+            panel,
+            curves,
+            states,
+            dict(ranges.lengths),
+            ArrowOptions(),
+            scenario.movement_kinds(),
+        )
+        assert [arrow.points[0] for arrow in arrows] == pytest.approx(starts)
+        assert all(len(arrow.points) == 2 for arrow in arrows)
+        assert all(arrow.points[0][1] == pytest.approx(arrow.points[1][1]) for arrow in arrows)
+
+
+def test_rotation_arrows_use_angle_derived_beziers_inside_the_panel() -> None:
+    scenario = capital_scenario()
+    states = scenario.solve()
+    layout = five_panel_layout()
+    ranges = axis_lengths(states, extent=1.7)
+
+    for panel_key in ("production",):
+        panel = layout.panel(panel_key)
+        curves = curve_specs(panel, scenario, states, ranges, CurveOptions())
+        arrows = _rotation_arrows(
+            panel,
+            curves,
+            ranges.lengths,
+            scenario.movement_kinds(),
+            ArrowOptions(),
+        )
+        for arrow in arrows:
+            assert len(arrow.points) == 48
+            assert all(
+                0 <= x <= ranges.lengths[panel.x] and 0 <= y <= ranges.lengths[panel.y]
+                for x, y in arrow.points
+            )
+
+
+def test_labor_rotation_markers_are_separate_and_search_from_the_tail() -> None:
+    scenario = capital_scenario()
+    states = scenario.solve()
+    panel = five_panel_layout().panel("labor")
+    ranges = axis_lengths(states, extent=1.7)
+    curves = curve_specs(panel, scenario, states, ranges, CurveOptions())
+    arrows = _rotation_arrows(
+        panel,
+        curves,
+        ranges.lengths,
+        scenario.movement_kinds(),
+        ArrowOptions(),
+    )
+
+    assert len(arrows) == 2
+    first = {(round(x, 5), round(y, 5)) for x, y in arrows[0].points}
+    second = {(round(x, 5), round(y, 5)) for x, y in arrows[1].points}
+    assert first.isdisjoint(second)
+
+
+def test_lm_and_as_labels_are_fractional_and_fixed_above_right_of_curve_tails() -> None:
+    grid = five_panel_canvas(capital_scenario())
+    layers = {
+        layer.id: layer
+        for placement in grid.placements
+        for layer in placement.canvas.snapshot().layers
+    }
+
+    for base in (
+        "macro.panels.islm.lm.0",
+        "macro.panels.islm.lm.1",
+        "macro.panels.adas.sras.0",
+        "macro.panels.adas.sras.1",
+    ):
+        curve, label = layers[base], layers[f"{base}.label"]
+        tail = max(curve.path, key=lambda point: (point[0], point[1]))  # type: ignore[attr-defined]
+        assert label.position[0] > tail[0]  # type: ignore[attr-defined]
+        assert label.position[1] > tail[1]  # type: ignore[attr-defined]
+        assert f"{base}.label.leader" not in layers
+
+    assert r"\frac{M_0}{p_0}" in str(layers["macro.panels.islm.lm.0.label"].text)  # type: ignore[attr-defined]
+    assert r"\frac{M_0}{p_2}" in str(layers["macro.panels.islm.lm.1.label"].text)  # type: ignore[attr-defined]
 
 
 # -- parameters and settings ------------------------------------------------------------

@@ -243,7 +243,7 @@ def multiplier_canvas(
 ) -> Canvas:
     """Draw a change in autonomous spending and the multiplier process behind it.
 
-    The old demand line stays heavy; the new one is thin and dashed. With ``show_path`` the
+    The old demand line stays heavy; the new one is thin and solid. With ``show_path`` the
     first ``rounds`` rounds are drawn as steps between the new demand line and the 45-degree
     line, from A toward A', named A, B, C, D, E. An arrow beside the lines shows the shift.
     """
@@ -352,7 +352,7 @@ def open_goods_canvas(
 ) -> Canvas:
     """Draw the open-economy goods market: the 45-degree line, demand, and equilibrium A.
 
-    Given an ``OpenEconomyShift`` the new demand line is thin and dashed with its crossing A'.
+    Given an ``OpenEconomyShift`` the new demand line is thin and solid with its crossing A'.
     ``show_balanced_trade`` adds a dotted vertical at the output where net exports are zero:
     A to its left means a trade surplus, to its right a trade deficit.
     """
@@ -431,13 +431,12 @@ def _open_shift(
             )
         )
         canvas.extend(marked_point(point, point_name(0, prime=index), layer_id=name, role=role))
-    x = SHIFT_ARROW_POSITION * right
+    old = baseline.equilibrium()
     canvas.add(
         shift_arrow(
-            (x, baseline.demand(x)),
-            (x, post.demand(x)),
+            (old.output, old.demand),
+            (old.output, post.demand(old.output)),
             layer_id="macro.keynesian.shift",
-            extent=(right, right),
         )
     )
     return canvas

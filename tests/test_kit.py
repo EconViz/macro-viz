@@ -68,3 +68,51 @@ def test_without_settings_labels_carry_no_nudge() -> None:
     canvas.add(TextLayer((0, 0), "A", id="macro.test.curve.label", role="macro.curve.primary"))
 
     assert canvas.snapshot().layers[0].nudge is None  # type: ignore[attr-defined]
+
+
+def test_moved_curves_and_movement_arrows_are_solid_and_thinner_than_curves() -> None:
+    from macro_viz.themes import MANUAL_THEME
+
+    def stroke(role: str):  # type: ignore[no-untyped-def]
+        return MANUAL_THEME.resolve(role, fallback_category="path").stroke
+
+    heavy = stroke("macro.curve.primary").width
+    for role in ("macro.curve.primary.shifted", "macro.curve.secondary.shifted", "macro.movement"):
+        found = stroke(role)
+        assert found.dash.value == "solid", role
+        assert found.width < heavy, role
+
+
+def test_shift_is_straight_and_rotation_opens_toward_the_vertical_centreline() -> None:
+    from mosaickit import ArrowLayer
+
+    from macro_viz.visuals._theory import rotation_arrow, shift_arrow
+
+    assert isinstance(shift_arrow((1.0, 2.0), (3.0, 2.0), layer_id="s"), ArrowLayer)
+    for start, end, pivot, direction in (
+        ((2.0, 5.0), (3.0, 6.0), (5.0, 5.0), -1.0),
+        ((8.0, 5.0), (7.0, 6.0), (5.0, 5.0), 1.0),
+    ):
+        arc = rotation_arrow(start, end, pivot=pivot, layer_id="r", extent=(10.0, 10.0)).path
+        middle = arc[len(arc) // 2]
+        chord_x = (start[0] + end[0]) / 2
+        assert (middle[0] - chord_x) * direction > 0
+
+
+def test_a_curve_name_sits_below_right_of_its_end_unless_a_line_is_there() -> None:
+    from macro_viz.i18n import Labels
+    from macro_viz.visuals._theory import curve, theory_canvas
+
+    canvas = theory_canvas(
+        10.0,
+        10.0,
+        labels=Labels(None),
+        x_label_id="axis.origin",
+        y_label_id="axis.origin",
+        title=None,
+    )
+    canvas.extend(
+        curve([(1.0, 8.0), (8.0, 3.0)], layer_id="c", role="macro.curve.primary", label="L")
+    )
+    label = next(layer for layer in canvas.snapshot().layers if layer.id == "c.label")
+    assert label.anchor == "top-left"  # type: ignore[attr-defined]

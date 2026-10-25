@@ -64,9 +64,12 @@ def test_economic_domain_does_not_import_mosaickit() -> None:
     assert offenders == {}
 
 
-def test_p0_has_only_mosaickit_as_a_direct_graphics_dependency() -> None:
+def test_curve_geometry_has_only_the_two_shared_direct_dependencies() -> None:
     project = tomllib.loads((PACKAGE_ROOT.parents[1] / "pyproject.toml").read_text("utf-8"))[
         "project"
     ]
 
-    assert project["dependencies"] == ["mosaickit>=1.0.0rc9,<2"]
+    assert project["dependencies"] == [
+        "bezierkit>=1.1.1,<2",
+        "mosaickit>=1.0.0rc10,<2",
+    ]

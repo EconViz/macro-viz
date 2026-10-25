@@ -76,7 +76,7 @@ def production_function_canvas(
     """Draw the concave production function with points at the given capital levels.
 
     Each capital level in ``points`` gets a dot named A, B, ... with guides to both axes; with
-    ``shifted`` (better technology, another function) the new curve is thin and dashed and a
+    ``shifted`` (better technology, another function) the new curve is thin and solid and a
     curved arrow shows the upward shift.
     """
     prefix, text = _ids(effective), Labels(labels)
@@ -124,14 +124,9 @@ def production_function_canvas(
                 label=text(f"{prefix}curve.production_shifted"),
             )
         )
-        x = 0.5 * right
+        x = points[0] if points else 0.5 * right
         canvas.add(
-            shift_arrow(
-                (x, model.output(x)),
-                (x, shifted.output(x)),
-                layer_id="macro.growth.shift",
-                extent=(right, top),
-            )
+            shift_arrow((x, model.output(x)), (x, shifted.output(x)), layer_id="macro.growth.shift")
         )
     return canvas
 
@@ -154,7 +149,7 @@ def solow_canvas(
     """Draw output, saving ``s f(k)``, and required investment, with the steady state A.
 
     Given a ``SteadyStateShift`` (a change of the saving rate, population or technology growth)
-    the changed curve is thin and dashed, the new steady state is A', and a curved arrow shows
+    the changed curve is thin and solid, the new steady state is A', and a straight arrow shows
     the shift. Arrows along the capital axis point toward each steady state.
     """
     shift = subject if isinstance(subject, SteadyStateShift) else None
@@ -249,7 +244,7 @@ def _shift_layers(
 ) -> list[Layer]:
     post, base = shift.post, shift.baseline
     layers: list[Layer] = []
-    x = 0.45 * right
+    x = base.steady_state()
     if post.saving != base.saving:
         layers += curve(
             trim(sample(post.investment, 0.0, right, samples), right, top),
@@ -259,10 +254,7 @@ def _shift_layers(
         )
         layers.append(
             shift_arrow(
-                (x, base.investment(x)),
-                (x, post.investment(x)),
-                layer_id="macro.growth.shift",
-                extent=(right, top),
+                (x, base.investment(x)), (x, post.investment(x)), layer_id="macro.growth.shift"
             )
         )
     else:
@@ -277,8 +269,6 @@ def _shift_layers(
                 (x, base.required_investment(x)),
                 (x, post.required_investment(x)),
                 layer_id="macro.growth.shift",
-                extent=(right, top),
-                bend="right",
             )
         )
     steady = post.steady_state()

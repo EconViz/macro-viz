@@ -8,8 +8,18 @@ All notable changes to `macro-viz` will be documented in this file.
 
 - Figures follow the manual panel style: dashed guides, only the price `p` lowercase (other variables
   uppercase italic, interest rate `R`), a thin 45-degree line with an arrowhead and `45°` at its tip,
-  curved shift arrows (`shift_arrow`, with a bend side), animated GIF frames padded to one size, and a
+  curved rotation arrows, animated GIF frames padded to one size, and a
   test that no example label overlaps a line or another label.
+
+- Single-panel figures: a moved curve is thin and solid, not dashed. A parallel shift is a straight
+  arrow from the old equilibrium to the new curve (horizontal or vertical); movement arrows are solid
+  and thinner than the curves. `rotation_arrow` is the only curved arrow (gentle, concave side down,
+  for a change of slope). Curve names sit at the line end: lower-right, else upper-left, lower-left,
+  upper-right, clear of every line.
+- Linked-panel scenarios accept curve-owned movements such as
+  `economy.curve(Curve.LM).shift(RIGHT)`. The caller chooses the curve and direction; macro-viz
+  applies a schematic preset and solves the shared equilibrium without inferring a policy or
+  real-world event. MosaicKit and BezierKit place and construct rotation markers.
 
 ### Added
 
@@ -41,7 +51,7 @@ All notable changes to `macro-viz` will be documented in this file.
 - `macro_viz.open_economy` and `open_goods_canvas`: the open-economy goods market and trade balance.
 - `InterestParity`, `OpenISLM`, `interest_parity_canvas`, and `open_islm_canvas`: Mundell-Fleming building blocks.
 - `analyze_devaluation`: open-economy AS-AD devaluation shift.
-- A theory-diagram kit (arrowed axes, direct curve labels, dotted guides, dashed old positions) in
+- A theory-diagram kit (arrowed axes, direct curve labels, dotted guides, solid moved positions) in
   the manual style.
 - `macro_viz.animation` and the `macro-viz[animation]` extra: GIF and native animated SVG from any
   figure builder through KineticKit. Static figures work without it.

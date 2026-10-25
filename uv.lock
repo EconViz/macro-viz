@@ -9,6 +9,20 @@ resolution-markers = [
 ]
 
 [[package]]
+name = "bezierkit"
+version = "1.1.1"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "numpy", version = "2.2.6", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.11'" },
+    { name = "numpy", version = "2.4.6", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version == '3.11.*'" },
+    { name = "numpy", version = "2.5.4", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.12'" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/d9/35/6f079ce790fb4495dbd4ae3be1705f0dc5badab2eead8dec684dbcd5aa9c/bezierkit-1.1.1.tar.gz", hash = "sha256:b7212084e72646f5838e1c98f2188677d72d702317fd186e24b9e939352f183d", size = 177796, upload-time = "2026-10-25T13:10:13.111Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/7f/b3/9fc273cb7ded085b8c3a6de1e03c9a3a2443225144605dafcb0305ca7af8/bezierkit-1.1.1-py3-none-any.whl", hash = "sha256:643fc91ea2d94f2688686c1d0699caa61ac2a48aa7c475e0a032bdb9ae0a2207", size = 56586, upload-time = "2026-10-25T13:10:11.804Z" },
+]
+
+[[package]]
 name = "colorama"
 version = "0.4.6"
 source = { registry = "https://pypi.org/simple" }
@@ -755,6 +769,7 @@ name = "macro-viz"
 version = "0.2.0.dev0"
 source = { editable = "." }
 dependencies = [
+    { name = "bezierkit" },
     { name = "mosaickit" },
 ]
 
@@ -772,8 +787,9 @@ dev = [
 
 [package.metadata]
 requires-dist = [
+    { name = "bezierkit", specifier = ">=1.1.1,<2" },
     { name = "kinetickit", extras = ["raster"], marker = "extra == 'animation'", specifier = ">=1.0.0b2,<2.0.0" },
-    { name = "mosaickit", specifier = ">=1.0.0rc9,<2" },
+    { name = "mosaickit", specifier = ">=1.0.0rc10,<2" },
 ]
 provides-extras = ["animation"]
 
@@ -940,7 +956,7 @@ wheels = [
 
 [[package]]
 name = "mosaickit"
-version = "1.0.0rc9"
+version = "1.0.0rc10"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "glyphkit" },
@@ -951,9 +967,9 @@ dependencies = [
     { name = "numpy", version = "2.5.4", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.12'" },
     { name = "tomli", marker = "python_full_version < '3.11'" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/fc/ca/555a45e931f9756d2099f2245d45874dffa07fbe0b8c17eedb32c79245d3/mosaickit-1.0.0rc9.tar.gz", hash = "sha256:63a93566af76b099224225c4df68a8b496d95820ab1cb2161483bbc3d5bdc202", size = 328070, upload-time = "2026-10-24T11:20:53.507Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/b6/e2/62b4bba691f692baeba38f3977eb01a28f02ad8240ab0f1eda480933ad42/mosaickit-1.0.0rc10.tar.gz", hash = "sha256:359cf485301f5ae0b1c01c179fd276421250b1c9067250ce86aa1f3d81c04342", size = 332564, upload-time = "2026-10-25T13:10:31.357Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/29/62/1af7fb4153f2921a79801997b9d1bc07b0df1dc5c4cca0b397628713a58a/mosaickit-1.0.0rc9-py3-none-any.whl", hash = "sha256:f5c48571bd78c3747738ce1237c3c3e3adece7455597d9f9f9285eb0f2267f07", size = 143259, upload-time = "2026-10-24T11:20:51.884Z" },
+    { url = "https://files.pythonhosted.org/packages/ea/44/4decbd908d77ade0e95bca851140518d57f591c093111ec9e456e6918c9c/mosaickit-1.0.0rc10-py3-none-any.whl", hash = "sha256:ffb12072e25d6c507778ff1d1a6bf4209c73f6a91602446e594c49fee9e48908", size = 147011, upload-time = "2026-10-25T13:10:29.604Z" },
 ]
 
 [[package]]

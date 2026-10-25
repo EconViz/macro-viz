@@ -33,9 +33,13 @@ from __future__ import annotations
 import math
 from dataclasses import dataclass, replace
 from numbers import Real
+from typing import TYPE_CHECKING
 
 from macro_viz.errors import ValidationError
 from macro_viz.panels.solve import bisect, bisect_above
+
+if TYPE_CHECKING:
+    from macro_viz.panels.movement import Curve, EconomicCurve
 
 N, W, Y, P, R = "N", "W", "Y", "p", "R"
 """Ids of the variables a panel can show; the text drawn for each is in the locale table."""
@@ -286,3 +290,15 @@ class MacroEconomy:
             raise ValidationError("this economy has no IS-LM block")
         level = self.expected_price if price is None else price
         return replace(self, islm=self.islm.calibrated(self.output(level), level, rate))
+
+    def curve(self, curve: Curve) -> EconomicCurve:
+        """Bind a drawable curve identifier to this economy.
+
+        The local import keeps the economic equations independent of movement rendering.
+        The annotations are resolved at runtime to avoid a module cycle on Python 3.10.
+        """
+        from macro_viz.panels.movement import Curve, EconomicCurve
+
+        if not isinstance(curve, Curve):
+            raise ValidationError("curve must be a Curve member")
+        return EconomicCurve(self, curve)

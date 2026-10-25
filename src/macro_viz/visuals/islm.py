@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from collections.abc import Mapping
+from collections.abc import Callable, Mapping
 
 from mosaickit import BraceLayer, Canvas, Layer
 
@@ -67,8 +67,8 @@ def islm_canvas(
 ) -> Canvas:
     """Draw IS, LM, and their crossing A, optionally after a fiscal or monetary change.
 
-    Given an ``ISLMShift`` the moved curve is thin and dashed, the new crossing is A', and a
-    curved arrow shows the shift. ``rate_max`` is the highest interest rate of the curves
+    Given an ``ISLMShift`` the moved curve is thin and solid, the new crossing is A', and a
+    straight arrow shows the shift. ``rate_max`` is the highest interest rate of the curves
     (default: twice the highest equilibrium rate) and ``x_max`` the length of the output axis
     (default ``extent`` times the highest output). With ``show_crowding`` a fiscal change also
     marks ``B``, where the new IS curve stands at the old interest rate: the distance from B to
@@ -132,6 +132,24 @@ def islm_canvas(
     return canvas
 
 
+def _arrow(
+    shift: ISLMShift,
+    rates: float,
+    old_output: Callable[[float], float],
+    new_output: Callable[[float], float],
+) -> tuple[tuple[float, float], tuple[float, float]]:
+    """A horizontal arrow from the old crossing to the moved curve, at the old crossing's rate.
+
+    When the old rate is zero the arrow would run along the axis, so it is drawn at
+    ``ARROW_SHARE`` of the highest rate, from the old curve.
+    """
+    before = shift.before
+    if before.rate > 0:
+        return (before.output, before.rate), (new_output(before.rate), before.rate)
+    rate = ARROW_SHARE * rates
+    return (old_output(rate), rate), (new_output(rate), rate)
+
+
 def _shift_layers(
     shift: ISLMShift,
     right: float,
@@ -149,8 +167,7 @@ def _shift_layers(
             role="macro.curve.primary.shifted",
             label=text("islm.curve.is_shifted"),
         )
-        rate = ARROW_SHARE * rates
-        arrow = ((shift.baseline.is_output(rate), rate), (post.is_output(rate), rate))
+        arrow = _arrow(shift, rates, shift.baseline.is_output, post.is_output)
     else:
         layers += curve(
             trim(lm_curve(post, rates, samples), right, top),
@@ -158,9 +175,8 @@ def _shift_layers(
             role="macro.curve.secondary.shifted",
             label=text("islm.curve.lm_shifted"),
         )
-        rate = ARROW_SHARE * rates
-        arrow = ((shift.baseline.lm_output(rate), rate), (post.lm_output(rate), rate))
-    layers.append(shift_arrow(*arrow, layer_id="macro.islm.shift", extent=(right, top)))
+        arrow = _arrow(shift, rates, shift.baseline.lm_output, post.lm_output)
+    layers.append(shift_arrow(*arrow, layer_id="macro.islm.shift"))
     end = shift.after
     unchanged = (
         abs(end.output - shift.before.output) < SAME_VALUE
