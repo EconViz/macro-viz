@@ -6,6 +6,12 @@ All notable changes to `macro-viz` will be documented in this file.
 
 ### Changed
 
+- The five source files over 450 lines are now packages of small modules, split by responsibility,
+  with the same import paths: `visuals.panels` (presets, geometry, context, ticks, panel, builders),
+  `animation` (presets, GIF frames, geometry, typography, depicter, SVG), `panels.curves` (types,
+  geometry, ranges, one builder per panel kind), `visuals.adas` and `visuals.growth`. Code is moved,
+  not rewritten: every figure is identical in SVG and PNG. The line-limit test has no exemptions.
+
 - Requires `mosaickit>=1.0.0rc14`. The AD, LM and IS derivations are declared with
   `mosaickit.diagram.Diagram` (`line`, `curve`, `point`, `drop`, `arrow`, `tail_label`, `stack`,
   `link_points`) through one wiring module, `visuals/_diagram.py` (locale labels, `macro.*` roles,
