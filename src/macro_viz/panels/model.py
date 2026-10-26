@@ -31,6 +31,7 @@ The goods market clears at the price level where aggregate demand equals aggrega
 from __future__ import annotations
 
 import math
+from collections.abc import Callable
 from dataclasses import dataclass, replace
 from numbers import Real
 from typing import TYPE_CHECKING
@@ -101,6 +102,14 @@ class QuadraticProduction:
 
     def marginal_product(self, employment: float, capital: float) -> float:
         return self.scale(capital) * (self.productivity - self.curvature * employment)
+
+    def marginal_product_at(self, capital: float) -> Callable[[float], float]:
+        """``employment -> marginal_product(employment, capital)``, the capital term done once.
+
+        The same arithmetic as :meth:`marginal_product`, for loops that vary employment only.
+        """
+        scale, productivity, curvature = self.scale(capital), self.productivity, self.curvature
+        return lambda employment: scale * (productivity - curvature * employment)
 
 
 @dataclass(frozen=True, slots=True)
@@ -231,8 +240,11 @@ class MacroEconomy:
         """Employment where labour demand equals labour supply; zero if supply asks too much."""
         pe = self.expected_price if expected_price is None else expected_price
 
+        marginal_product = self.production.marginal_product_at(self.capital)
+        supply = self.labor_supply
+
         def excess(n: float) -> float:
-            return self.labor_demand(n, price) - self.labor_supply_wage(n, pe)
+            return price * marginal_product(n) - pe * supply(n)
 
         limit = self.production.employment_limit
         if excess(0.0) <= 0:

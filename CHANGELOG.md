@@ -4,6 +4,14 @@ All notable changes to `macro-viz` will be documented in this file.
 
 ## Unreleased
 
+### Performance
+
+- Linked-panel scenarios solve faster with identical results: the expectation search memoises its
+  clearing-price evaluations and the labour-market bisection computes the capital term once
+  (`QuadraticProduction.marginal_product_at`). `MacroCanvas` places curve names when the figure is
+  read instead of after every `add`/`extend`. `tests/test_performance_guards.py` counts these
+  evaluations; `benchmarks/bench_examples.py` times the examples by hand and is not run by CI (#58).
+
 ### Changed
 
 - The example scripts write to `examples/output/<topic>/` instead of one flat folder, and the

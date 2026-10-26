@@ -207,8 +207,13 @@ class Scenario:
 def _with_correct_expectations(economy: MacroEconomy) -> MacroEconomy:
     """The economy with ``pe`` equal to the price level that clears its goods market."""
 
+    known: dict[float, float] = {}
+
     def gap(expected: float) -> float:
-        return replace(economy, expected_price=expected).clearing_price() - expected
+        # the search asks for the same expected price again at every bracket end
+        if expected not in known:
+            known[expected] = replace(economy, expected_price=expected).clearing_price() - expected
+        return known[expected]
 
     inner = economy.expected_price
     first = gap(inner)
