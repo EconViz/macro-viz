@@ -1,5 +1,8 @@
 """Shared visual presets for transmission derivation diagrams."""
 
+ID_ROOT = "macro.transmission"
+"""Prefix of every layer id of a transmission derivation, followed by the figure and the part."""
+
 GRID_COLUMN_GAP = 0.22
 GRID_ROW_GAP = 0.14
 """Gaps between derivation panels as shares of one panel."""
@@ -70,3 +73,19 @@ AS_DEMAND_TAIL = 2.6
 
 AS_PAD = {"N": 0.3, "Y": 0.08}
 """Room right of the N and Y axes for curve names in the AS derivation."""
+
+SHIFTED_NAME_SIDE = "above"
+"""Side of its end where a shifted curve's name goes. The wide ``LM(M/p)`` names of the old and
+the shifted line would overlap upper-right of both ends, so the shifted one sits above its end."""
+
+TAIL_LABEL_ABOVE = (0.0, 8.0)
+"""Offset in points of a fixed label above the end of a vertical line."""
+
+TAIL_LABEL_RIGHT = (8.0, 0.0)
+"""Offset in points of a fixed label right of the end of a falling schedule."""
+
+PRODUCTION_Z_INDEX = 0
+"""Stacking order of the 45-degree line: beneath every schedule and guide."""
+
+MIN_RUN = 1e-12
+"""Smallest horizontal distance between solved points that still defines a line."""

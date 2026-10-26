@@ -6,6 +6,14 @@ All notable changes to `macro-viz` will be documented in this file.
 
 ### Changed
 
+- Requires `mosaickit>=1.0.0rc13`. The AD, LM and IS derivations are declared with
+  `mosaickit.diagram.Diagram` (`line`, `curve`, `point`, `drop`, `arrow`, `tail_label`, `stack`,
+  `link_points`) through one wiring module, `visuals/_diagram.py` (locale labels, `macro.*` roles,
+  `[macro.label.*]` nudges, curve-name sizing). Layer ids, SVG structure and PNG pixels are unchanged
+  except the shifted LM name in the AD derivation, which now sits above the end of its line instead
+  of upper-left, clear of the `LM(M/p0)` name. `tailed_line` and the local `indexed` are removed.
+  Tests fail on bare numbers in `visuals/transmission` and on source files over 450 lines.
+
 - Requires `mosaickit>=1.0.0rc12`. Linked-panel and derivation grids use `CanvasGrid(...,
   spacing=GridSpacing(...))`; the private `PanelGrid` and its renderer subclass are removed. Rendered
   figures are pixel-identical.
