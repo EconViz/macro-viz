@@ -11,6 +11,7 @@ from mosaickit import (
     Span,
 )
 from mosaickit.canvas.grid_link import GridLink
+from mosaickit.layout.labels import LabelOptions
 
 from macro_viz.errors import ValidationError
 from macro_viz.i18n import Labels
@@ -29,9 +30,7 @@ from macro_viz.panels import (
 from macro_viz.panels.curves import (
     DEFAULT_SAMPLES,
 )
-from macro_viz.visuals._placement import (
-    PlacementOptions,
-)
+from macro_viz.visuals._labels import LABEL_OPTIONS
 from macro_viz.visuals.panels._context import _aspect, _Context, _unit_height, _Window
 from macro_viz.visuals.panels._geometry import _rotation_arrows, _shifted_states
 from macro_viz.visuals.panels._panel import _panel_canvas
@@ -77,7 +76,7 @@ def linked_panels_canvas(
     column_gap: float = COLUMN_GAP,
     row_gap: float = ROW_GAP,
     outer: float = OUTER_MARGIN,
-    placement: PlacementOptions | None = None,
+    label_options: LabelOptions = LABEL_OPTIONS,
     width: float = PANEL_WIDTH,
 ) -> CanvasGrid:
     """Draw ``scenario`` on ``layout``: curves, points, ticks, shift arrows and projections.
@@ -100,8 +99,8 @@ def linked_panels_canvas(
     above each vertical axis (shares of the axis length); ``margin`` the room under and left of
     the axes for tick labels; ``label_gap`` how far dashed paths stop short of a tick label;
     ``column_gap`` and ``row_gap`` the space between grid columns and rows (shares of a cell);
-    ``outer`` the margin around the figure (a share of its size); ``placement`` the distances
-    and text-size estimate used to place labels.
+    ``outer`` the margin around the figure (a share of its size); ``label_options`` the distances
+    of the label placer (a MosaicKit ``LabelOptions``).
 
     ``title`` is drawn above the top-left panel;
     ``None`` draws none.
@@ -171,7 +170,7 @@ def linked_panels_canvas(
             width,
             height,
             _axes_size_pt(layout, panel, width, height, column_gap, row_gap, outer),
-            placement or PlacementOptions(),
+            label_options,
         )
     matrix: list[list[Span | None]] = [[None] * layout.cols for _ in range(layout.rows)]
     occupied: set[tuple[int, int]] = set()

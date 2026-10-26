@@ -8,4 +8,10 @@ def test_package_version() -> None:
 
 
 def test_shared_types_are_available_at_the_package_root() -> None:
-    assert macro_viz.__all__ == ["Config", "MacroVizError", "ValidationError", "__version__"]
+    assert macro_viz.__all__ == [
+        "Config",
+        "LabelPlacementWarning",
+        "MacroVizError",
+        "ValidationError",
+        "__version__",
+    ]

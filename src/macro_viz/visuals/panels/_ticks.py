@@ -1,16 +1,14 @@
-"""Tick labels, their leaning and the placement of curve names beside them."""
+"""Tick labels and the dashed projections between panels."""
 
 from __future__ import annotations
 
-from collections.abc import Callable, Collection, Sequence
+from collections.abc import Callable, Collection
 from dataclasses import dataclass
 
 from mosaickit import (
-    Layer,
     TextLayer,
 )
 
-from macro_viz.errors import ValidationError
 from macro_viz.panels import (
     Hop,
     PanelLayout,
@@ -21,63 +19,19 @@ from macro_viz.panels.curves import (
     KEY_DIGITS,
 )
 from macro_viz.panels.layout import X_AXIS
-from macro_viz.visuals._placement import (
-    Box,
-    Placed,
-    PlacementOptions,
-    Scene,
-    is_free,
-    text_box,
-)
+from macro_viz.visuals._labels import POINTS_PER_INCH
 from macro_viz.visuals.panels._context import _Context, _present
-from macro_viz.visuals.panels._preset import POINTS_PER_INCH, TICK_CLEARANCE, TICK_OFFSET
 
 
-def _text_layer(
-    position: tuple[float, float], text: str, axis: str, layer_id: str, lean: str = "center"
-) -> TextLayer:
-    """A tick label; ``lean`` ``left`` or ``right`` ends or starts the label at its tick."""
-    if axis == X_AXIS:
-        anchor = {"center": "top", "left": "top-right", "right": "top-left"}[lean]
-        return TextLayer(
-            position,
-            text,
-            id=layer_id,
-            role="macro.mark",
-            anchor=anchor,
-            offset=(0, -TICK_OFFSET),
-            math=True,
-        )
-    anchor = {"center": "right", "left": "top-right", "right": "bottom-right"}[lean]
-    return TextLayer(
-        position,
-        text,
-        id=layer_id,
-        role="macro.mark",
-        anchor=anchor,
-        offset=(-TICK_OFFSET, 0),
-        math=True,
-    )
-
-
-def _leans(values: Sequence[float], span: float) -> list[str]:
-    """For tick positions along one axis: ``left`` for a label that leans left (the left one of
-    two crowded ticks), ``right`` for the right one, ``center`` otherwise."""
-    order = sorted(range(len(values)), key=lambda i: values[i])
-    lean = ["center"] * len(values)
-    for first, second in zip(order, order[1:], strict=False):
-        if values[second] - values[first] < TICK_CLEARANCE * span:
-            if lean[first] == "center":
-                lean[first] = "left"
-            if lean[second] == "center":
-                lean[second] = "right"
-    return lean
+def _text_layer(position: tuple[float, float], text: str, layer_id: str) -> TextLayer:
+    """A tick label at its tick; the placer chooses its side and anchor."""
+    return TextLayer(position, text, id=layer_id, role="macro.mark", math=True)
 
 
 def _ticks(
     ctx: _Context, hidden: Collection[tuple[str, str]]
-) -> tuple[dict[str, list[Layer]], set[tuple[str, str, str, float]]]:
-    """The tick labels of every panel, and which (panel, axis, variable, value) were drawn."""
+) -> tuple[dict[str, list[tuple[TextLayer, str]]], set[tuple[str, str, str, float]]]:
+    """Each panel's tick labels with their axis, and which ticks (panel, axis, variable, value)."""
     found: dict[tuple[str, str], list[tuple[float, str, str]]] = {}
     drawn: set[tuple[str, str, str, float]] = set()
     seen: set[tuple[str, float]] = set()
@@ -97,14 +51,11 @@ def _ticks(
             name = f"${ctx.symbol(tick.variable)}_{state.subscript(tick.variable)}$"
             layer_id = f"macro.panels.{tick.panel}.tick.{tick.variable}.{state.label}"
             found.setdefault((tick.panel, tick.axis), []).append((value, name, layer_id))
-    layers: dict[str, list[Layer]] = {panel.key: [] for panel in ctx.layout.panels}
+    layers: dict[str, list[tuple[TextLayer, str]]] = {panel.key: [] for panel in ctx.layout.panels}
     for (name_of_panel, axis), items in found.items():
-        panel = ctx.layout.panel(name_of_panel)
-        low, high = ctx.x_range(panel) if axis == X_AXIS else ctx.y_range(panel)
-        leans = _leans([value for value, _, _ in items], high - low)
-        for (value, name, layer_id), lean in zip(items, leans, strict=True):
+        for value, name, layer_id in items:
             position = (value, 0.0) if axis == X_AXIS else (0.0, value)
-            layers[name_of_panel].append(_text_layer(position, name, axis, layer_id, lean))
+            layers[name_of_panel].append((_text_layer(position, name, layer_id), axis))
     return layers, drawn
 
 
@@ -214,30 +165,6 @@ def _cleared(
     return (point[0], -gap * ctx.lengths[panel.y])
 
 
-def _tick_box(
-    layer: Layer,
-    scale: tuple[float, float],
-    origin: tuple[float, float],
-    size: float,
-    o: PlacementOptions,
-) -> Box:
-    """The estimated box in points of a tick label (a ``TextLayer`` of ``_text_layer``)."""
-    assert isinstance(layer, TextLayer)
-    w, h = text_box(str(layer.text), size, o)
-    x = (layer.position[0] - origin[0]) * scale[0] + layer.offset[0]
-    y = (layer.position[1] - origin[1]) * scale[1] + layer.offset[1]
-    horizontal, _, vertical = layer.anchor.partition("-")[::-1] if False else (None, None, None)
-    del horizontal, vertical
-    names = layer.anchor
-    left = "left" in names
-    right = "right" in names
-    top = "top" in names
-    bottom = "bottom" in names
-    x0 = x if left else x - w if right else x - w / 2
-    y0 = y - h if top else y if bottom else y - h / 2
-    return (x0, y0, x0 + w, y0 + h)
-
-
 def _axes_size_pt(
     layout: PanelLayout,
     panel: PanelSpec,
@@ -262,29 +189,3 @@ def _axes_size_pt(
     )
     h = height * layout.rows * inner * extent(panel.rows, row_gap) / extent(layout.rows, row_gap)
     return (w * POINTS_PER_INCH, h * POINTS_PER_INCH)
-
-
-def _upper_right_of_tail(
-    anchor: tuple[float, float],
-    size: tuple[float, float],
-    scene: Scene,
-    options: PlacementOptions,
-) -> Placed:
-    """Place a curve name above-right of its tail, moving farther right until unobstructed."""
-    base = options.gap * 0.75
-    unbounded = Scene(
-        segments=scene.segments,
-        boxes=scene.boxes,
-        dots=scene.dots,
-        limits=(-float("inf"), -float("inf"), float("inf"), float("inf")),
-        dot_radius=scene.dot_radius,
-    )
-    for ring in range(32):
-        x_gap = base + ring * options.step
-        y_gap = base + ring * options.step * 0.25
-        position = (anchor[0] + x_gap, anchor[1] + y_gap)
-        box = (position[0], position[1], position[0] + size[0], position[1] + size[1])
-        candidate = Placed(box, "bottom-left", position, None)
-        if is_free(box, unbounded, options, ignore=(anchor,)):
-            return candidate
-    raise ValidationError("could not place a curve label above-right of its tail")

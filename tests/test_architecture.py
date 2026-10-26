@@ -71,5 +71,5 @@ def test_curve_geometry_has_only_the_two_shared_direct_dependencies() -> None:
 
     assert project["dependencies"] == [
         "bezierkit>=1.1.1,<2",
-        "mosaickit>=1.0.0rc14,<2",
+        "mosaickit>=1.0.0rc15,<2",
     ]

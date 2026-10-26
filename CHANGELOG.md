@@ -4,6 +4,24 @@ All notable changes to `macro-viz` will be documented in this file.
 
 ## Unreleased
 
+### Fixed
+
+- Curve names, point labels and tick labels are placed by MosaicKit's global label placer
+  (`mosaickit>=1.0.0rc15`) instead of the per-package sliding heuristics, so every name sits next
+  to its own curve end, inside the canvas, without touching a line, marker, arrow or another
+  label; with three parallel shifted LM lines each name now stays at its own line (closes #57).
+  Placement runs once per figure, at one font size. A label the placer cannot place cleanly emits
+  a `macro_viz.LabelPlacementWarning` (kept on `MacroCanvas.label_warnings`). New
+  `visuals/_labels.py` is the single adapter.
+
+### Removed
+
+- `visuals/_placement.py`, `MacroCanvas.rising_names_above`, `TICK_CLEARANCE`, the private
+  `_upper_right_of_tail` / `_leans` helpers and the `CURVE_NAME_WIDTH` estimate. The `placement=`
+  option of `linked_panels_canvas` / `five_panel_canvas` / `four_panel_canvas` is now
+  `label_options=` (a `mosaickit.layout.labels.LabelOptions`). `UPPER_RIGHT_TAIL_LABELS` is still
+  exported from `macro_viz.visuals.panels`.
+
 ### Performance
 
 - Linked-panel scenarios solve faster with identical results: the expectation search memoises its

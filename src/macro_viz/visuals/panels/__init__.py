@@ -9,6 +9,7 @@ the locale table."""
 
 from __future__ import annotations
 
+from macro_viz.visuals._labels import UPPER_RIGHT_TAIL_LABELS
 from macro_viz.visuals.panels._geometry import _rotation_arrows
 from macro_viz.visuals.panels._preset import (
     COLUMN_GAP,
@@ -21,9 +22,7 @@ from macro_viz.visuals.panels._preset import (
     PANEL_WIDTH,
     ROW_GAP,
     SYMBOL_IDS,
-    TICK_CLEARANCE,
     TOP_PAD,
-    UPPER_RIGHT_TAIL_LABELS,
 )
 from macro_viz.visuals.panels.builders import (
     five_panel_canvas,
@@ -40,7 +39,6 @@ __all__ = [
     "DEFAULT_PAD",
     "TOP_PAD",
     "MARGIN",
-    "TICK_CLEARANCE",
     "LABEL_GAP",
     "UPPER_RIGHT_TAIL_LABELS",
     "SYMBOL_IDS",
