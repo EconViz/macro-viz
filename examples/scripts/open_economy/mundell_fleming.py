@@ -2,10 +2,14 @@
 
 from __future__ import annotations
 
+import sys
 from collections.abc import Sequence
+from pathlib import Path
+
+sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
 from common import load_example, setup
-from islm import build
+from model_common import build_islm
 
 from macro_viz.open_economy import InterestParity, OpenISLM
 from macro_viz.visuals import interest_parity_canvas, open_islm_canvas
@@ -15,7 +19,7 @@ def main(argv: Sequence[str] | None = None) -> None:
     args, output = setup(__doc__ or "", argv)
     data = load_example(args.data, "mundell_fleming")
     parity = InterestParity(data["foreign_rate"], data["expected_rate"], data["parity_slope"])
-    model = OpenISLM(build(load_example(args.data, "islm")), parity, data["exchange_effect"])
+    model = OpenISLM(build_islm(load_example(args.data, "islm")), parity, data["exchange_effect"])
     suffix = args.suffix
     interest_parity_canvas(parity).save(output / f"interest_parity{suffix}")
     open_islm_canvas(model).save(output / f"open_islm{suffix}")

@@ -159,7 +159,7 @@ IS: Y = X - e R   LM: M / p = k Y - h R  AD: Y = (X + (e / h) M / p) / (1 + e k 
 ```
 
 `Mode.SCHEMATIC` (default) draws straight lines through the solved points, as in textbook
-figures; `Mode.DERIVED` draws the curves from the equations. See `examples/scripts/four_panel.py`
+figures; `Mode.DERIVED` draws the curves from the equations. See `examples/scripts/panels/four_panel.py`
 and `five_panel.py`; the scenarios live in `examples/examples.toml`.
 
 `MoneyDemand(..., zero_bound=True)` and `ISLM(..., zero_bound=True)` add the zero lower bound: money
@@ -187,7 +187,7 @@ floating-rate equilibrium `(Y, i, E)` and the fixed-rate one (`i = i*`). `intere
 and `open_islm_canvas` draw them; the side-by-side linked panels belong with the linked-panel work.
 
 `analyze_devaluation` shifts AD right by `exchange_effect * devaluation`; adjustment under a fixed
-rate is `analyze_adjustment` on the AS-AD model (`examples/scripts/open_asad.py`).
+rate is `analyze_adjustment` on the AS-AD model (`examples/scripts/open_economy/open_asad.py`).
 
 ## Animation
 
@@ -196,7 +196,7 @@ macro-viz[animation]` adds KineticKit. `macro_viz.animation.save_gif(builder, va
 the builder's canvas at each value through MosaicKit and streams the frames into a GIF;
 `save_svg` morphs between the frames' layers, matched by their stable ids, into a native animated
 SVG and sets the labels with GlyphKit in the fonts of the active settings. Fix every axis range
-in the builder, as `examples/scripts/keynesian_animation.py` does. Without KineticKit the static
+in the builder, as `examples/scripts/animation/keynesian_animation.py` does. Without KineticKit the static
 figures work unchanged.
 
 ## Configuration
@@ -233,17 +233,20 @@ is saved.
 
 ## Examples
 
-Tracked executable examples live in `examples/scripts`; their generated images are intentionally
-ignored. Sample data and titles are in `examples/examples.toml`, the manual look (black and white,
-white background, TeX Gyre Pagella, direct labels, arrowed axes) in `examples/econ-viz.toml`.
-Both, the output folder, and the image format are command-line arguments. Each script writes to
-its own folder `examples/output/<topic>/` (for example `keynesian.py` to
-`examples/output/keynesian/`, all `*_animation.py` scripts to `examples/output/animation/`) unless
-`--output` is given; the topics are listed in `examples/scripts/common.py`. Regenerate locally with:
+Tracked executable examples live in `examples/scripts/<topic>/` (`adas`, `animation`, `growth`,
+`islm`, `keynesian`, `money`, `open_economy`, `panels`, `wsps`); the shared helpers `common.py`,
+`model_common.py` and `panels_common.py` sit beside the topic folders. Generated images are
+intentionally ignored. Sample data and titles are in `examples/examples.toml`, the manual look
+(black and white, white background, TeX Gyre Pagella, direct labels, arrowed axes) in
+`examples/econ-viz.toml`. Both, the output folder, and the image format are command-line
+arguments. Each script writes to the folder of the same name under `examples/output/` (for example
+`keynesian/keynesian.py` to `examples/output/keynesian/`, `animation/*.py` to
+`examples/output/animation/`) unless `--output` is given. Regenerate locally from the repository
+root with:
 
 ```bash
-uv run python examples/scripts/keynesian.py
-uv run python examples/scripts/keynesian_animation.py
+uv run python examples/scripts/keynesian/keynesian.py
+uv run python examples/scripts/animation/keynesian_animation.py
 ```
 
 The scripts look for the font files in `$MACRO_VIZ_FONT_DIR` and in a TeX Live installation, and

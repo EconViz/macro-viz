@@ -2,10 +2,14 @@
 
 from __future__ import annotations
 
+import sys
 from collections.abc import Sequence
+from pathlib import Path
+
+sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
 from common import load_example, setup
-from islm import build
+from model_common import build_islm
 
 from macro_viz import ValidationError
 from macro_viz.animation import linear_values, save_gif, save_svg
@@ -17,7 +21,7 @@ from macro_viz.visuals._theory import EXTENT
 def main(argv: Sequence[str] | None = None) -> None:
     args, output = setup(__doc__ or "", argv)
     data = load_example(args.data, "islm")
-    model = build(data)
+    model = build_islm(data)
     final = analyze_monetary_policy(model, data["real_money_after"]).after
     x_max = EXTENT * max(final.output, model.equilibrium().output)
     rates = 2.0 * model.equilibrium().rate

@@ -2,10 +2,14 @@
 
 from __future__ import annotations
 
+import sys
 from collections.abc import Sequence
+from pathlib import Path
+
+sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
 from common import load_example, setup
-from growth import build
+from model_common import build_solow
 
 from macro_viz import ValidationError
 from macro_viz.animation import linear_values, save_gif, save_svg
@@ -17,13 +21,13 @@ from macro_viz.visuals.growth import SOLOW_EXTENT
 def main(argv: Sequence[str] | None = None) -> None:
     args, output = setup(__doc__ or "", argv)
     data = load_example(args.data, "solow")
-    model = build(data)
-    final = build(data, saving=data["saving_after"])
+    model = build_solow(data)
+    final = build_solow(data, saving=data["saving_after"])
     k_max = SOLOW_EXTENT * final.steady_state()
     y_max = max(model.output(k_max), final.output(k_max)) / 0.92
 
     def builder(saving: float):  # type: ignore[no-untyped-def]
-        change = analyze_change(model, build(data, saving=saving))
+        change = analyze_change(model, build_solow(data, saving=saving))
         return solow_canvas(change, k_max=k_max, y_max=y_max)
 
     start, stop, count = data["saving"], data["saving_after"], data["frames"]
