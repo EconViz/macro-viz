@@ -6,6 +6,10 @@ All notable changes to `macro-viz` will be documented in this file.
 
 ### Changed
 
+- The example scripts write to `examples/output/<topic>/` (one folder per script or theme, the
+  `*_animation.py` scripts to `animation/`) instead of one flat folder. `--output` still overrides
+  the folder as given; file names are unchanged. Generated files stay untracked.
+
 - `visuals.keynesian` is now a package of small modules (presets, shared base layers, consumption
   function, cross, multiplier, open-economy goods market) with the same import paths. Code is moved,
   not rewritten: every figure is identical in SVG and PNG.

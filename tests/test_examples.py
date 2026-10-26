@@ -4,6 +4,8 @@ import subprocess
 import sys
 from pathlib import Path
 
+import pytest
+
 REPOSITORY_ROOT = Path(__file__).parents[1]
 
 
@@ -118,3 +120,30 @@ def test_no_label_overlaps_a_line_or_another_label(tmp_path: Path) -> None:
                 importlib.import_module(name).main(["--output", str(tmp_path)])
     finally:
         sys.path.remove(scripts)
+
+
+def _import_script(name: str) -> object:
+    import importlib
+
+    scripts = str(REPOSITORY_ROOT / "examples" / "scripts")
+    sys.path.insert(0, scripts)
+    try:
+        return importlib.import_module(name)
+    finally:
+        sys.path.remove(scripts)
+
+
+def test_every_example_script_has_an_output_topic() -> None:
+    scripts = REPOSITORY_ROOT / "examples" / "scripts"
+    runnable = {path.stem for path in scripts.glob("*.py")} - {"common", "panels_common"}
+
+    assert set(_import_script("common").TOPICS) == runnable  # type: ignore[attr-defined]
+
+
+def test_default_output_is_the_topic_folder(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    monkeypatch.setattr(_import_script("common"), "OUTPUT_ROOT", tmp_path)
+    _import_script("keynesian").main([])  # type: ignore[attr-defined]
+
+    assert (tmp_path / "keynesian" / "multiplier.svg").stat().st_size > 0
