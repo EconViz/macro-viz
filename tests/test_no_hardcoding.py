@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import ast
 import re
 from collections.abc import Iterator
 from pathlib import Path
@@ -101,3 +102,61 @@ def test_widths_and_sizes_come_from_the_settings() -> None:
         "macro.curve.primary", fallback_category="path"
     )
     assert role.stroke is not None and role.stroke.width == 1.5
+
+
+TRANSMISSION = SOURCE / "visuals" / "transmission"
+ALLOWED_NUMBERS = {0, 1, 2}
+"""Bare numbers a drawing function may use: zero, one, and two (a mean or a pair)."""
+PRESET_FILES = {"_preset.py"}
+"""The one module that holds the derivations' visual constants, each with its own docstring."""
+
+
+def _bare_numbers(path: Path) -> list[tuple[int, object]]:
+    """Every numeric literal of ``path`` other than 0, 1, 2 and their negatives."""
+    found: list[tuple[int, object]] = []
+    for node in ast.walk(ast.parse(path.read_text("utf-8"))):
+        if (
+            isinstance(node, ast.Constant)
+            and isinstance(node.value, (int, float))
+            and not isinstance(node.value, bool)
+            and abs(node.value) not in ALLOWED_NUMBERS
+        ):
+            found.append((node.lineno, node.value))
+    return sorted(found)
+
+
+def test_transmission_figures_hold_no_bare_numbers() -> None:
+    offenders = [
+        f"{path.relative_to(SOURCE)}:{line}: {value}"
+        for path in sorted(TRANSMISSION.glob("*.py"))
+        if path.name not in PRESET_FILES
+        for line, value in _bare_numbers(path)
+    ]
+
+    assert offenders == [], "move these numbers to _preset.py or the configuration"
+
+
+MAX_LINES = 450
+"""A source file longer than this should be split into a package of smaller modules."""
+OVER_LIMIT = {
+    "visuals/panels.py",
+    "animation.py",
+    "panels/curves.py",
+    "visuals/adas.py",
+    "visuals/growth.py",
+}
+"""Files that already exceeded the limit before it was introduced; split them when touched."""
+
+
+def test_no_source_file_exceeds_the_line_limit() -> None:
+    lines = {
+        path.relative_to(SOURCE).as_posix(): len(path.read_text("utf-8").splitlines())
+        for path in _sources()
+    }
+    offenders = [
+        f"{name}: {count} lines"
+        for name, count in sorted(lines.items())
+        if count > MAX_LINES and name not in OVER_LIMIT
+    ]
+
+    assert offenders == []

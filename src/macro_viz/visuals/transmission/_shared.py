@@ -6,7 +6,7 @@ from collections.abc import Sequence
 
 from mosaickit import Canvas, CanvasGrid, GridSpacing, Span
 from mosaickit.canvas.grid_link import GridLink
-from mosaickit.layout import clip_polyline, data_slope_for_display, extend_line_through
+from mosaickit.layout import data_slope_for_display
 
 from macro_viz.errors import ValidationError
 from macro_viz.visuals._theory import HEADROOM, trim
@@ -15,15 +15,16 @@ from macro_viz.visuals.transmission._preset import (
     GRID_COLUMN_GAP,
     GRID_OUTER,
     GRID_ROW_GAP,
+    ID_ROOT,
     LIQUIDITY_DISPLAY_SLOPE,
     LIQUIDITY_TAIL_SHARE,
+    MIN_RUN,
 )
 
 
-def indexed(label: str, index: int) -> str:
-    if label.startswith("$") and label.endswith("$"):
-        return f"{label[:-1]}_{index}$"
-    return f"{label}_{index}"
+def layer_id(figure: str, *parts: object) -> str:
+    """``macro.transmission.<figure>.<part>...``: the stable id of one layer of a derivation."""
+    return ".".join((ID_ROOT, figure, *(str(part) for part in parts)))
 
 
 def called(label: str, argument: str) -> str:
@@ -36,19 +37,11 @@ def line_through(
     """Extend the chord through solved points to the visible edges of its panel."""
     first, last = sorted(points)[0], sorted(points)[-1]
     run = last[0] - first[0]
-    if abs(run) < 1e-12:
+    if abs(run) < MIN_RUN:
         raise ValidationError("a derived curve needs distinct horizontal values")
     slope = (last[1] - first[1]) / run
     intercept = first[1] - slope * first[0]
     return trim(((0.0, intercept), (x_max, intercept + slope * x_max)), x_max, y_max)
-
-
-def tailed_line(
-    points: Sequence[tuple[float, float]], x_max: float, y_max: float, tail_share: float
-) -> list[tuple[float, float]]:
-    """Extend the chord by a share of its solved span instead of to the panel edges."""
-    chord = extend_line_through(sorted(points), before=tail_share)
-    return list(clip_polyline(chord, (0.0, HEADROOM * x_max), (0.0, HEADROOM * y_max)))
 
 
 def parallel_liquidity_schedule(
@@ -75,6 +68,10 @@ def axis_with_upper_tail(values: Sequence[float]) -> float:
     return (high + DERIVED_TAIL * (high - low)) / HEADROOM
 
 
+SPACING = GridSpacing(column_gap=GRID_COLUMN_GAP, row_gap=GRID_ROW_GAP, outer=GRID_OUTER)
+"""The gaps between the panels of a derivation, shares of a cell."""
+
+
 def grid(
     cells: Sequence[Sequence[Canvas | Span | None]],
     links: Sequence[GridLink],
@@ -87,5 +84,5 @@ def grid(
         rows=rows,
         cols=cols,
         links=links,
-        spacing=GridSpacing(column_gap=GRID_COLUMN_GAP, row_gap=GRID_ROW_GAP, outer=GRID_OUTER),
+        spacing=SPACING,
     )

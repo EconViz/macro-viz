@@ -3,36 +3,29 @@
 from __future__ import annotations
 
 from collections.abc import Mapping
+from functools import partial
 
-from mosaickit import CanvasGrid, TextLayer
-from mosaickit.canvas.grid_link import GridLink
+from mosaickit import CanvasGrid
+from mosaickit.diagram import PointLink, indexed, stack
 
 from macro_viz.errors import ValidationError
 from macro_viz.i18n import Labels
 from macro_viz.transmission import LMDerivation
-from macro_viz.visuals._theory import (
-    DEFAULT_SAMPLES,
-    EXTENT,
-    HEADROOM,
-    axis_mark,
-    curve,
-    guide,
-    marked_point,
-    point_name,
-    shift_arrow,
-    theory_canvas,
-)
+from macro_viz.visuals._diagram import LINK, PRIMARY, SECONDARY, panel
+from macro_viz.visuals._theory import DEFAULT_SAMPLES, EXTENT, HEADROOM, point_name
 from macro_viz.visuals.transmission._preset import (
     DERIVATION_WIDTH,
     LM_DERIVATION_HEIGHT,
     LM_TAIL_SHARE,
+    TAIL_LABEL_ABOVE,
+    TAIL_LABEL_RIGHT,
 )
-from macro_viz.visuals.transmission._shared import (
-    grid,
-    indexed,
-    parallel_liquidity_schedule,
-    tailed_line,
-)
+from macro_viz.visuals.transmission._shared import SPACING, layer_id, parallel_liquidity_schedule
+
+FIGURE = "lm"
+"""Figure name in the layer ids of this derivation."""
+PANEL_ROLE = "macro.curve.panel"
+"""Role of the first liquidity-demand schedule, the baseline the others are compared with."""
 
 
 def lm_derivation_canvas(
@@ -55,144 +48,84 @@ def lm_derivation_canvas(
     )
     rate_max = max(state.market.demand.rate_max for state in states) / HEADROOM
     output_max = extent * max(state.output for state in states)
-    market = theory_canvas(
-        money_max,
-        rate_max,
-        labels=text,
-        x_label_id="transmission.axis.real_money",
-        y_label_id="money.axis.rate",
+    market = panel(
+        text,
+        "transmission.axis.real_money",
+        "money.axis.rate",
+        x_max=money_max,
         title=title,
+        y_max=rate_max,
         width=width,
         height=height,
     )
-    supply_path = (
-        (derivation.money_market.supply, 0.0),
-        (derivation.money_market.supply, HEADROOM * rate_max),
-    )
-    market.extend(
-        curve(
-            supply_path,
-            layer_id="macro.transmission.lm.supply",
-            role="macro.curve.secondary",
-        )
-    )
-    market.add(
-        TextLayer(
-            supply_path[-1],
-            text("transmission.curve.real_money_supply"),
-            offset=(0.0, 8.0),
-            anchor="bottom",
-            id="macro.transmission.lm.supply.tail-label",
-            role="macro.curve.secondary",
-            z_index=7,
-        )
-    )
-    lm = theory_canvas(
-        output_max,
-        rate_max,
-        labels=text,
-        x_label_id="islm.axis.output",
-        y_label_id="islm.axis.rate",
-        title=None,
+    lm = panel(
+        text,
+        "islm.axis.output",
+        "islm.axis.rate",
+        x_max=output_max,
+        y_max=rate_max,
         width=width,
         height=height,
     )
-    lm.extend(
-        curve(
-            tailed_line(
-                [(state.output, state.rate) for state in states],
-                output_max,
-                rate_max,
-                LM_TAIL_SHARE,
-            ),
-            layer_id="macro.transmission.lm.curve",
-            role="macro.curve.secondary",
-            label=text("islm.curve.lm"),
-        )
+    name = partial(layer_id, FIGURE)
+    supply = derivation.money_market.supply
+    market.curve(
+        name("supply"), [(supply, 0.0), (supply, HEADROOM * rate_max)], role=SECONDARY, trim=False
     )
-    links: list[GridLink] = []
-    demand_paths: list[list[tuple[float, float]]] = []
+    market.tail_label(
+        name("supply", "tail-label"),
+        name("supply"),
+        text("transmission.curve.real_money_supply"),
+        offset=TAIL_LABEL_ABOVE,
+    )
+    lm.line(
+        name("curve"),
+        [(state.output, state.rate) for state in states],
+        tail=LM_TAIL_SHARE,
+        role=SECONDARY,
+        label=text("islm.curve.lm"),
+    )
+    links, schedules = [], []
     for index, state in enumerate(states):
-        left = (state.market.supply, state.rate)
-        right = (state.output, state.rate)
-        demand_path = parallel_liquidity_schedule(left, money_max, rate_max, width, height)
-        demand_paths.append(demand_path)
-        demand_role = "macro.curve.panel" if index == 0 else "macro.curve.primary"
-        market.extend(
-            curve(
-                demand_path,
-                layer_id=f"macro.transmission.lm.demand.{index}",
-                role=demand_role,
-            )
+        left, right = (state.market.supply, state.rate), (state.output, state.rate)
+        schedule = parallel_liquidity_schedule(left, money_max, rate_max, width, height)
+        schedules.append(schedule)
+        demand = name("demand", index)
+        market.curve(demand, schedule, role=PANEL_ROLE if index == 0 else PRIMARY, trim=False)
+        market.tail_label(
+            f"{demand}.tail-label",
+            demand,
+            text("transmission.curve.liquidity_demand").format(index=index),
+            offset=TAIL_LABEL_RIGHT,
         )
-        market.add(
-            TextLayer(
-                max(demand_path, key=lambda point: (point[0], point[1])),
-                text("transmission.curve.liquidity_demand").format(index=index),
-                offset=(8.0, 0.0),
-                anchor="left",
-                id=f"macro.transmission.lm.demand.{index}.tail-label",
-                role=demand_role,
-                z_index=7,
-            )
+        market_point, lm_point = (
+            name("market", "equilibrium", index),
+            name("curve", "equilibrium", index),
         )
-        market.extend(
-            marked_point(
-                left,
-                point_name(index),
-                layer_id=f"macro.transmission.lm.market.equilibrium.{index}",
-            )
+        market.point(market_point, left, point_name(index))
+        market.axis_mark(
+            "y",
+            state.rate,
+            indexed(text("money.mark.rate"), index),
+            name=name("market", "rate", index),
         )
-        market.add(
-            axis_mark(
-                "y",
-                state.rate,
-                indexed(text("money.mark.rate"), index),
-                layer_id=f"macro.transmission.lm.market.rate.{index}",
-            )
+        market.guide((0.0, state.rate), left, name=name("market", "rate-guide", index))
+        lm.point(lm_point, right, point_name(index))
+        lm.axis_mark(
+            "x", state.output, indexed(text("islm.mark.output"), index), name=name("output", index)
         )
-        market.add(
-            guide(
-                (0.0, state.rate),
-                left,
-                layer_id=f"macro.transmission.lm.market.rate-guide.{index}",
-            )
-        )
-        lm.extend(
-            marked_point(
-                right,
-                point_name(index),
-                layer_id=f"macro.transmission.lm.curve.equilibrium.{index}",
-            )
-        )
-        lm.add(
-            axis_mark(
-                "x",
-                state.output,
-                indexed(text("islm.mark.output"), index),
-                layer_id=f"macro.transmission.lm.output.{index}",
-            )
-        )
-        lm.add(
-            guide(
-                (state.output, 0.0),
-                right,
-                layer_id=f"macro.transmission.lm.curve.output-guide.{index}",
-            )
-        )
-        links.append(GridLink(0, left, 1, right, role="macro.link"))
-    shift_rate = states[0].rate
-    shifted_first, shifted_last = demand_paths[-1][0], demand_paths[-1][-1]
-    shifted_slope = (shifted_last[1] - shifted_first[1]) / (shifted_last[0] - shifted_first[0])
-    shift_end = (
-        shifted_first[0] + (shift_rate - shifted_first[1]) / shifted_slope,
-        shift_rate,
+        lm.guide((state.output, 0.0), right, name=name("curve", "output-guide", index))
+        links.append(PointLink(0, market_point, 1, lm_point, role=LINK))
+    market.arrow(
+        name("demand", "shift"),
+        (states[0].market.supply, states[0].rate),
+        _shift_end(schedules[-1], states[0].rate),
     )
-    market.add(
-        shift_arrow(
-            (states[0].market.supply, shift_rate),
-            shift_end,
-            layer_id="macro.transmission.lm.demand.shift",
-        )
-    )
-    return grid(((market, lm),), links, rows=1, cols=2)
+    return stack([market, lm], links, cols=2, spacing=SPACING)
+
+
+def _shift_end(schedule: list[tuple[float, float]], rate: float) -> tuple[float, float]:
+    """Where a horizontal line at ``rate`` meets the straight schedule through ``schedule``."""
+    first, last = schedule[0], schedule[-1]
+    slope = (last[1] - first[1]) / (last[0] - first[0])
+    return (first[0] + (rate - first[1]) / slope, rate)
