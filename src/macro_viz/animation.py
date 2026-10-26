@@ -50,7 +50,7 @@ DEFAULT_STEP_SECONDS = 0.8
 """Seconds KineticKit takes to morph from one frame to the next in an animated SVG."""
 
 POINTS_PER_INCH = 72.0
-MARGIN_POINTS = (46.0, 40.0, 34.0, 34.0)
+MARGIN_POINTS = (46.0, 40.0, 60.0, 34.0)
 """Left, bottom, right, and top space around the axes in an animated SVG, in points."""
 
 DASH_PATTERNS = {

@@ -27,7 +27,7 @@ def main(argv: Sequence[str] | None = None) -> None:
         return solow_canvas(change, k_max=k_max, y_max=y_max)
 
     start, stop, count = data["saving"], data["saving_after"], data["frames"]
-    values = linear_values(start + (stop - start) / count, stop, count)
+    values = linear_values(start + 0.6 * (stop - start), stop, count)
     try:
         save_svg(builder, values, output / "solow_animation.svg", step_seconds=data["step_seconds"])
     except ValidationError as error:
