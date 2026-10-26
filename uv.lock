@@ -789,7 +789,7 @@ dev = [
 requires-dist = [
     { name = "bezierkit", specifier = ">=1.1.1,<2" },
     { name = "kinetickit", extras = ["raster"], marker = "extra == 'animation'", specifier = ">=1.0.0b2,<2.0.0" },
-    { name = "mosaickit", specifier = ">=1.0.0rc11,<2" },
+    { name = "mosaickit", specifier = ">=1.0.0rc12,<2" },
 ]
 provides-extras = ["animation"]
 
@@ -956,7 +956,7 @@ wheels = [
 
 [[package]]
 name = "mosaickit"
-version = "1.0.0rc11"
+version = "1.0.0rc12"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "glyphkit" },
@@ -967,9 +967,9 @@ dependencies = [
     { name = "numpy", version = "2.5.4", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.12'" },
     { name = "tomli", marker = "python_full_version < '3.11'" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/a3/21/6207ee58d284710fe60cac0f7c1e3ab68ed5b1f89d957caf3cf05a12df54/mosaickit-1.0.0rc11.tar.gz", hash = "sha256:c8576f2f79fc08c07ce05437768465336c2280b9404a45027e5f0ce0b5880193", size = 343372, upload-time = "2026-10-26T05:24:19.742Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/f8/fb/e0f1fb2d09a84ec9acc2aff93f715479a5040726688acbb748015e7fe491/mosaickit-1.0.0rc12.tar.gz", hash = "sha256:918d521eb9463b3fff2e2d170245b027dee130848cd914f057e610ec797603c9", size = 354239, upload-time = "2026-10-26T06:13:26.467Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/64/df/dc9ada4d384915cff5ed039436732ddb7e1d69b9d572defb1da3e62b50ac/mosaickit-1.0.0rc11-py3-none-any.whl", hash = "sha256:5df8e50b52920e5d320a9566accfb27586cd8604ae898a2e9789738e7b9642b2", size = 155382, upload-time = "2026-10-26T05:24:18.008Z" },
+    { url = "https://files.pythonhosted.org/packages/75/dc/68e7ea7c55f9ad42c2e47cb7e107494354204c6129aa8c10716c1463f52d/mosaickit-1.0.0rc12-py3-none-any.whl", hash = "sha256:2baebdded50e3d9f624a7108b8cc5ea6ab75f76500720314babfe1e87ed620c7", size = 164704, upload-time = "2026-10-26T06:13:24.924Z" },
 ]
 
 [[package]]
