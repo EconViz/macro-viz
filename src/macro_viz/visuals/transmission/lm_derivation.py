@@ -31,7 +31,7 @@ from macro_viz.visuals.transmission._shared import (
     grid,
     indexed,
     parallel_liquidity_schedule,
-    short_line_through,
+    tailed_line,
 )
 
 
@@ -99,7 +99,7 @@ def lm_derivation_canvas(
     )
     lm.extend(
         curve(
-            short_line_through(
+            tailed_line(
                 [(state.output, state.rate) for state in states],
                 output_max,
                 rate_max,

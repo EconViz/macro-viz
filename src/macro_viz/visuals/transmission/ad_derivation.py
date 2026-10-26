@@ -6,7 +6,7 @@ from collections.abc import Mapping
 
 from mosaickit import CanvasGrid
 from mosaickit.canvas.grid_link import GridLink
-from mosaickit.layout import View, centered_view, clip_polyline, extend_line_through
+from mosaickit.layout import View, centered_view
 
 from macro_viz.errors import ValidationError
 from macro_viz.i18n import Labels
@@ -14,7 +14,6 @@ from macro_viz.transmission import ADDerivation
 from macro_viz.visuals._theory import (
     DEFAULT_SAMPLES,
     EXTENT,
-    HEADROOM,
     curve,
     drop_lines,
     marked_point,
@@ -33,7 +32,7 @@ from macro_viz.visuals.transmission._preset import (
     AD_TAIL,
     LM_DISPLAY_SLOPE,
 )
-from macro_viz.visuals.transmission._shared import grid, indexed
+from macro_viz.visuals.transmission._shared import grid, indexed, tailed_line
 
 
 def ad_derivation_canvas(
@@ -74,14 +73,7 @@ def ad_derivation_canvas(
     def line(
         view: View, points: list[tuple[float, float]], tail: float
     ) -> list[tuple[float, float]]:
-        shown = [view.shift(point) for point in sorted(points)]
-        return list(
-            clip_polyline(
-                extend_line_through(shown, before=tail),
-                (0.0, HEADROOM * view.x_span),
-                (0.0, HEADROOM * view.y_span),
-            )
-        )
+        return tailed_line([view.shift(point) for point in points], view.x_span, view.y_span, tail)
 
     rates = sorted({state.rate for state in states})
     top = theory_canvas(

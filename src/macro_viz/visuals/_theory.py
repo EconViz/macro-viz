@@ -24,6 +24,7 @@ from mosaickit import (
     Stroke,
     TextLayer,
 )
+from mosaickit.layout import clip_polyline
 
 from macro_viz.errors import ValidationError
 from macro_viz.i18n import Labels
@@ -75,33 +76,6 @@ def sample(
     return [(low + k * step, function(low + k * step)) for k in range(samples)]
 
 
-def _clip(
-    start: Point, end: Point, box: tuple[float, float, float, float]
-) -> tuple[Point, Point] | None:
-    """The part of a segment inside ``box`` = (x0, y0, x1, y1), or None (Liang-Barsky)."""
-    (ax, ay), (bx, by) = start, end
-    dx, dy = bx - ax, by - ay
-    lo, hi = 0.0, 1.0
-    for p, q in (
-        (-dx, ax - box[0]),
-        (dx, box[2] - ax),
-        (-dy, ay - box[1]),
-        (dy, box[3] - ay),
-    ):
-        if p == 0:
-            if q < 0:
-                return None
-            continue
-        t = q / p
-        if p < 0:
-            lo = max(lo, t)
-        else:
-            hi = min(hi, t)
-    if lo > hi:
-        return None
-    return (ax + lo * dx, ay + lo * dy), (ax + hi * dx, ay + hi * dy)
-
-
 def trim(
     points: Sequence[Point],
     x_max: float,
@@ -115,19 +89,10 @@ def trim(
     ``floor`` (a share of the vertical axis) also cuts off the part below it, so a falling line
     does not end on the axis where its name would collide with the axis marks.
     """
-    box = (0.0, floor * y_max, headroom * x_max, headroom * y_max)
-    kept: list[Point] = []
-    for start, end in zip(points, points[1:], strict=False):
-        clipped = _clip(start, end, box)
-        if clipped is None:
-            continue
-        first, last = clipped
-        if not kept or kept[-1] != first:
-            kept.append(first)
-        kept.append(last)
+    kept = clip_polyline(points, (0.0, headroom * x_max), (floor * y_max, headroom * y_max))
     if len(kept) < 2:
         raise ValidationError("the curve does not enter the plot")
-    return kept
+    return list(kept)
 
 
 def theory_canvas(
