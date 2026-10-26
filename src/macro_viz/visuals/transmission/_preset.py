@@ -65,7 +65,7 @@ AS_SRAS_DISPLAY_SLOPE = 0.9
 AS_TAIL = 0.9
 """Extra solved-state span kept beyond A and B on the AS derivation lines."""
 
-AS_DEMAND_TAIL = 1.4
+AS_DEMAND_TAIL = 2.6
 """Extra solved-state span kept left of A on labour demand, so the shift arrow has room."""
 
 AS_PAD = {"N": 0.3, "Y": 0.08}
