@@ -74,7 +74,19 @@ class MacroCanvas(Canvas):
         self._label_nudges = dict(label_nudges or {})
         self._spec: CanvasSpec | None = args[0] if args else kwargs.get("spec")
         self.rising_names_above = False
+        self._names_stale = False
         super().__init__(*args, **kwargs)
+
+    @property
+    def _scene(self) -> Any:
+        """The scene with every curve name placed; placing waits until something reads it."""
+        if self._names_stale:
+            self._place_curve_names()
+        return self._placed_scene
+
+    @_scene.setter
+    def _scene(self, scene: Any) -> None:
+        self._placed_scene = scene
 
     def _nudged(self, layer: Layer) -> Layer:
         group = label_group(layer)
@@ -87,21 +99,22 @@ class MacroCanvas(Canvas):
         return replace(layer, nudge=nudge)  # type: ignore[call-arg]
 
     def add(self, layer: Layer) -> MacroCanvas:
-        super().add(self._nudged(layer))
-        self._place_curve_names()
+        self._placed_scene = self._placed_scene.add(self._nudged(layer))
+        self._names_stale = True
         return self
 
     def extend(self, layers: Iterable[Layer]) -> MacroCanvas:
-        super().extend([self._nudged(layer) for layer in layers])
-        self._place_curve_names()
+        self._placed_scene = self._placed_scene.extend([self._nudged(layer) for layer in layers])
+        self._names_stale = True
         return self
 
     def _place_curve_names(self) -> None:
         """Put each curve's name at the first free diagonal off its end, clear of every line.
 
         Curves and arrows may be added after a name, so every name is placed again, in the
-        order the curves were added, whenever the figure changes.
+        order the curves were added, once the figure is read after a change.
         """
+        self._names_stale = False
         if self._spec is None:
             return
         layers: list[Any] = list(self.snapshot().layers)
