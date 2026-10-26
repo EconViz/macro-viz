@@ -6,6 +6,10 @@ All notable changes to `macro-viz` will be documented in this file.
 
 ### Changed
 
+- `visuals.keynesian` is now a package of small modules (presets, shared base layers, consumption
+  function, cross, multiplier, open-economy goods market) with the same import paths. Code is moved,
+  not rewritten: every figure is identical in SVG and PNG.
+
 - The five source files over 450 lines are now packages of small modules, split by responsibility,
   with the same import paths: `visuals.panels` (presets, geometry, context, ticks, panel, builders),
   `animation` (presets, GIF frames, geometry, typography, depicter, SVG), `panels.curves` (types,
