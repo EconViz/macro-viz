@@ -49,6 +49,7 @@ def _panel_canvas(
     height: float,
     size_pt: tuple[float, float],
     label_options: LabelOptions,
+    point_label_offset: tuple[float, float] | None,
 ) -> Canvas:
     x_range, y_range = ctx.x_range(panel), ctx.y_range(panel)
     spec = canvas_spec(
@@ -144,7 +145,17 @@ def _panel_canvas(
         layer_id = f"macro.panels.{panel.key}.point.{label}"
         canvas.add(MarkerLayer((location,), id=layer_id, role="macro.point", z_index=6))
         text = TextLayer(
-            location, f"${label}$", id=f"{layer_id}.label", role="macro.point", math=True, z_index=7
+            location,
+            f"${label}$",
+            id=f"{layer_id}.label",
+            role="macro.point",
+            offset=point_label_offset or (0, 0),
+            anchor="bottom" if point_label_offset is not None else "center",
+            math=True,
+            z_index=7,
         )
-        canvas.add_label(text, LabelSpec(layer_id, POINT_SIDES))
+        if point_label_offset is None:
+            canvas.add_label(text, LabelSpec(layer_id, POINT_SIDES))
+        else:
+            canvas.add(text)
     return canvas

@@ -18,16 +18,22 @@ from macro_viz.panels.model import N, P
 class _Labor(_Base):
     def labor(self, panel: PanelSpec) -> list[CurveSpec]:
         grid = self._n_grid()
-        demand_grid = _linspace(
-            self.options.demand_start * self.ranges[N],
-            self.options.span[1] * self.ranges[N],
-            self.options.samples,
-        )
         specs = []
         demand = self._unique(lambda s: _key(s.values[P], s.economy.capital))
         for key, owners in demand:
             state = owners[0]
             price, capital = state.values[P], state.economy.capital
+            primary = key == demand[0][0]
+            start = (
+                self.options.primary_demand_start
+                if primary and self.options.primary_demand_start is not None
+                else self.options.demand_start
+            )
+            demand_grid = _linspace(
+                start * self.ranges[N],
+                self.options.span[1] * self.ranges[N],
+                self.options.samples,
+            )
             fields = {
                 "price": price_symbol(self.states, price),
                 "capital": Subscripted(
@@ -41,7 +47,7 @@ class _Labor(_Base):
                     panel,
                     "labor_demand",
                     key,
-                    key == demand[0][0],
+                    primary,
                     points,
                     "panels.curve.labor_demand",
                     fields,
@@ -71,7 +77,11 @@ class _Labor(_Base):
         return specs
 
     def production(self, panel: PanelSpec) -> list[CurveSpec]:
-        grid = self._n_grid()
+        grid = (
+            _linspace(0.0, self.options.span[1] * self.ranges[N], self.options.samples)
+            if self.options.production_from_origin
+            else self._n_grid()
+        )
         groups = self._unique(lambda s: _key(s.economy.capital))
         specs = []
         for key, owners in groups:

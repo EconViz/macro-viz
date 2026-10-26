@@ -105,7 +105,7 @@ def ad_derivation_canvas(
         role=SECONDARY,
         label=text("adas.curve.demand"),
     )
-    # the money-market line moves left as the price rises, from A at its own rate
+    # Follow the change from the p0 baseline to the p1 money-market line.
     top.arrow(
         name("lm", "shift"),
         (first.output, first.rate),

@@ -68,6 +68,7 @@ def linked_panels_canvas(
     origins: Mapping[str, float] | None = None,
     tails: Mapping[str, float] | None = None,
     demand_tail: float | None = None,
+    primary_demand_tail: float | None = None,
     pad: Mapping[str, float] | None = None,
     margin: float = MARGIN,
     top_pad: float = TOP_PAD,
@@ -77,6 +78,8 @@ def linked_panels_canvas(
     row_gap: float = ROW_GAP,
     outer: float = OUTER_MARGIN,
     label_options: LabelOptions = LABEL_OPTIONS,
+    point_label_offset: tuple[float, float] | None = None,
+    production_from_origin: bool = False,
     width: float = PANEL_WIDTH,
 ) -> CanvasGrid:
     """Draw ``scenario`` on ``layout``: curves, points, ticks, shift arrows and projections.
@@ -93,14 +96,17 @@ def linked_panels_canvas(
     ``origins`` moves the corner of the axes of a variable to that solved value (the axes then
     show a window of the model rather than starting at zero) and ``ranges`` is the length of
     the window. ``tails`` keeps curves of ``N`` and ``Y`` only that far (in model units) beyond
-    the outermost solved value, and ``demand_tail`` does so for the left end of labour demand.
+    the outermost solved value. ``demand_tail`` does so for the left end of labour demand;
+    ``primary_demand_tail`` may extend only its primary curve farther.
 
     ``pad`` is the room right of each horizontal axis for curve names and ``top_pad`` the room
     above each vertical axis (shares of the axis length); ``margin`` the room under and left of
     the axes for tick labels; ``label_gap`` how far dashed paths stop short of a tick label;
     ``column_gap`` and ``row_gap`` the space between grid columns and rows (shares of a cell);
     ``outer`` the margin around the figure (a share of its size); ``label_options`` the distances
-    of the label placer (a MosaicKit ``LabelOptions``).
+    of the label placer (a MosaicKit ``LabelOptions``). ``point_label_offset`` fixes point names
+    at that offset from their markers instead of asking the label placer to move them.
+    ``production_from_origin`` extends production curves to the displayed origin.
 
     ``title`` is drawn above the top-left panel;
     ``None`` draws none.
@@ -118,11 +124,17 @@ def linked_panels_canvas(
     full_pad = {**DEFAULT_PAD, **(pad or {})}
     ctx = _Context(layout, states, lengths.lengths, full_pad, text, margin, top_pad)
     options = CurveOptions(
-        mode=mode, samples=samples, sras=sras, shifted_sras=shifted_sras, lras=lras, ad=ad
+        mode=mode,
+        samples=samples,
+        sras=sras,
+        shifted_sras=shifted_sras,
+        lras=lras,
+        ad=ad,
+        production_from_origin=production_from_origin,
     )
     window = _Window(corner, lengths.lengths, options.headroom)
     if corner:
-        options = window.options(options, solved, tails or {}, demand_tail)
+        options = window.options(options, solved, tails or {}, demand_tail, primary_demand_tail)
     arrow_options = shift_arrows_on if isinstance(shift_arrows_on, ArrowOptions) else ArrowOptions()
     movement_kinds = scenario.movement_kinds()
     ticks, drawn = _ticks(ctx, hide_ticks)
@@ -171,6 +183,7 @@ def linked_panels_canvas(
             height,
             _axes_size_pt(layout, panel, width, height, column_gap, row_gap, outer),
             label_options,
+            point_label_offset,
         )
     matrix: list[list[Span | None]] = [[None] * layout.cols for _ in range(layout.rows)]
     occupied: set[tuple[int, int]] = set()

@@ -118,12 +118,13 @@ def is_derivation_canvas(
     )
     links = []
     for index, state in enumerate(states):
+        point_label = point_name(len(states) - index - 1)
         output_mark = indexed(text("keynesian.mark.output"), index)
         schedule = name("goods", index)
         goods.curve(
             schedule,
             trim(sample(state.market.demand, 0.0, output_max, samples), output_max, output_max),
-            role=PANEL_ROLE if index == 0 else PRIMARY,
+            role=PANEL_ROLE if index == len(states) - 1 else PRIMARY,
             trim=False,
         )
         goods.tail_label(
@@ -139,16 +140,16 @@ def is_derivation_canvas(
             name("curve", "equilibrium", index),
             name("investment", "equilibrium", index),
         )
-        goods.point(on_goods, (state.output, state.output), point_name(index))
+        goods.point(on_goods, (state.output, state.output), point_label)
         goods.drop(on_goods, x=output_mark, name=name("goods", "guide", index))
-        lower.point(on_lower, (state.output, state.rate), point_name(index))
+        lower.point(on_lower, (state.output, state.rate), point_label)
         lower.guide((0.0, state.rate), on_lower, name=name("curve", "rate-guide", index))
         lower.guide(
             (state.output, 0.0), (state.output, rate_max), name=name("curve", "output-guide", index)
         )
         lower.axis_mark("x", state.output, output_mark, name=name("output", index))
         lower.axis_mark("y", state.rate, indexed(rate_symbol, index), name=name("rate", index))
-        investment.point(on_investment, (state.investment, state.rate), point_name(index))
+        investment.point(on_investment, (state.investment, state.rate), point_label)
         investment.drop(
             on_investment,
             x=indexed(text("transmission.axis.investment"), index),

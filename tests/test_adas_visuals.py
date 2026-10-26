@@ -4,7 +4,7 @@ from collections.abc import Iterator
 from pathlib import Path
 
 import pytest
-from mosaickit import ArrowLayer, MarkerLayer, PathLayer
+from mosaickit import ArrowLayer, AxisMarkLayer, MarkerLayer, PathLayer, PointLabelLayer
 
 from macro_viz import Config, ValidationError
 from macro_viz.adas import (
@@ -62,6 +62,33 @@ def test_equilibrium_figure_has_curves_natural_output_and_both_points() -> None:
     assert isinstance(anchor, MarkerLayer)
     assert anchor.points[0] == pytest.approx((100, 1.0))
     assert "macro.adas.natural" not in layers(adas_canvas(model(), show_natural_output=False))
+
+
+def test_steady_equilibrium_is_at_the_canvas_centre() -> None:
+    steady = ASADModel(
+        AggregateSupply.linear(1.0, 20.0, 0.35),
+        AggregateDemand(5.0, 12.0, 1.25),
+    )
+    canvas = adas_canvas(steady)
+    found = layers(canvas)
+    point = found["macro.adas.equilibrium"]
+    assert isinstance(point, MarkerLayer)
+    x, y = point.points[0]
+
+    assert x == pytest.approx(canvas.spec.x_max / 2)
+    assert y == pytest.approx(canvas.spec.y_max / 2)
+    assert "macro.adas.anchor" not in found
+    label = found["macro.adas.equilibrium.label"]
+    assert isinstance(label, PointLabelLayer)
+    assert label.text == "$A=B$"
+    output_mark = found["macro.adas.natural.mark"]
+    assert isinstance(output_mark, AxisMarkLayer)
+    assert output_mark.label == "Y=Y_n"
+    assert "macro.adas.equilibrium.guide.x.mark" not in found
+    price_mark = found["macro.adas.expected.y.mark"]
+    assert isinstance(price_mark, AxisMarkLayer)
+    assert price_mark.label == "p=p^e"
+    assert "macro.adas.equilibrium.guide.y.mark" not in found
 
 
 def test_the_curves_lie_on_the_model_equations() -> None:

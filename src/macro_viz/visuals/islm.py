@@ -11,8 +11,8 @@ from macro_viz.i18n import Labels
 from macro_viz.islm.analysis import ISLMShift, Policy
 from macro_viz.islm.models import ISLM, ISLMExpectations
 from macro_viz.visuals._theory import (
+    CENTERED_EXTENT,
     DEFAULT_SAMPLES,
-    EXTENT,
     HEADROOM,
     THEORY_SIZE,
     curve,
@@ -34,6 +34,28 @@ the output axis."""
 
 ARROW_SHARE = 0.55
 """Where the shift arrow starts, as a share of the horizontal axis (IS) or of the rate axis."""
+
+DISPLAY_SLOPE = 1.0
+"""Absolute screen slope of the plain IS and LM schedules."""
+
+CURVE_TAIL_SHARE = 0.22
+"""Reach of either side of the equilibrium on a plain IS or LM schedule."""
+
+
+def _centred_schedule(
+    point: tuple[float, float],
+    sign: int,
+    right: float,
+    top: float,
+    width: float,
+    height: float,
+) -> list[tuple[float, float]]:
+    """Short schematic schedule through ``point`` with a fixed screen slope."""
+    run = CURVE_TAIL_SHARE * right
+    rise = DISPLAY_SLOPE * run * top / right * width / height
+    x, y = point
+    points = [(x - run, y - sign * rise), (x + run, y + sign * rise)]
+    return list(reversed(points)) if sign < 0 else points
 
 
 def is_curve(model: ISLM, rate_max: float, samples: int) -> list[tuple[float, float]]:
@@ -59,7 +81,7 @@ def islm_canvas(
     labels: Mapping[str, str] | None = None,
     x_max: float | None = None,
     rate_max: float | None = None,
-    extent: float = EXTENT,
+    extent: float = CENTERED_EXTENT,
     samples: int = DEFAULT_SAMPLES,
     show_crowding: bool = False,
     width: float = THEORY_SIZE,
@@ -86,9 +108,13 @@ def islm_canvas(
         raise ValidationError("the equilibrium interest rate must be positive to draw the figure")
     highest = max(e.rate for e in equilibria)
     fallback = ZERO_RATE_SHARE * model.autonomous / model.sensitivity
-    rates = rate_max if rate_max is not None else (2.0 * highest if highest > 0 else fallback)
+    if rate_max is None and highest > 0:
+        top = CENTERED_EXTENT * highest
+        rates = HEADROOM * top
+    else:
+        rates = rate_max if rate_max is not None else fallback
+        top = rates / HEADROOM
     right = x_max if x_max is not None else extent * max(e.output for e in equilibria)
-    top = rates / HEADROOM
     text = Labels(labels)
     canvas = theory_canvas(
         right,
@@ -100,9 +126,17 @@ def islm_canvas(
         width=width,
         height=height,
     )
+    start = equilibria[0]
+    point = (start.output, start.rate)
+    if shift is None:
+        is_points = _centred_schedule(point, -1, right, top, width, height)
+        lm_points = _centred_schedule(point, 1, right, top, width, height)
+    else:
+        is_points = trim(is_curve(model, rates, samples), right, top)
+        lm_points = trim(lm_curve(model, rates, samples), right, top)
     canvas.extend(
         curve(
-            trim(is_curve(model, rates, samples), right, top),
+            is_points,
             layer_id="macro.islm.is",
             role="macro.curve.primary",
             label=text("islm.curve.is"),
@@ -110,14 +144,12 @@ def islm_canvas(
     )
     canvas.extend(
         curve(
-            trim(lm_curve(model, rates, samples), right, top),
+            lm_points,
             layer_id="macro.islm.lm",
             role="macro.curve.secondary",
             label=text("islm.curve.lm"),
         )
     )
-    start = equilibria[0]
-    point = (start.output, start.rate)
     canvas.extend(
         drop_lines(
             point,

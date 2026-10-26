@@ -62,6 +62,10 @@ class CurveOptions:
     """The part of the ``N`` axis (as shares of its length) that curves of ``N`` cover."""
     demand_start: float = 0.02
     """Where labour-demand curves begin on the ``N`` axis, as a share of its length."""
+    primary_demand_start: float | None = None
+    """Optional earlier start for the primary labour-demand curve only."""
+    production_from_origin: bool = False
+    """Draw production from zero employment instead of the shared state span."""
     reach: float = 0.18
     """How far a straight line runs beyond its outermost point, as a share of the ``Y`` axis."""
     headroom: float = 0.92

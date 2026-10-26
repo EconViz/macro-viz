@@ -104,6 +104,31 @@ def test_figure_marks_the_crossing_and_the_shift() -> None:
     assert all(b[0] < a[0] for a, b in zip(is_path.path, is_path.path[1:], strict=False))
 
 
+def test_plain_equilibrium_is_at_the_canvas_centre() -> None:
+    canvas = islm_canvas(model())
+    point = layers(canvas)["macro.islm.equilibrium"]
+    assert isinstance(point, MarkerLayer)
+    x, y = point.points[0]
+
+    assert x == pytest.approx(canvas.spec.x_max / 2)
+    assert y == pytest.approx(canvas.spec.y_max / 2)
+
+    found = layers(canvas)
+    for layer_id in ("macro.islm.is", "macro.islm.lm"):
+        path = found[layer_id]
+        assert isinstance(path, PathLayer)
+        (x0, y0), (x1, y1) = path.path
+        screen_slope = (
+            abs((y1 - y0) / (x1 - x0))
+            * canvas.spec.x_max
+            / canvas.spec.y_max
+            * canvas.spec.height
+            / canvas.spec.width
+        )
+        assert screen_slope == pytest.approx(1.0)
+        assert x1 - x0 < canvas.spec.x_max / 2
+
+
 def test_figure_needs_a_positive_equilibrium_rate() -> None:
     with pytest.raises(ValidationError):
         islm_canvas(ISLM(100, 25, 60, 0.5, 10))

@@ -10,8 +10,8 @@ from macro_viz.adas.analysis import ASADShift, Shock
 from macro_viz.adas.models import ASADModel
 from macro_viz.i18n import Labels
 from macro_viz.visuals._theory import (
+    CENTERED_EXTENT,
     DEFAULT_SAMPLES,
-    EXTENT,
     HEADROOM,
     THEORY_SIZE,
     axis_mark,
@@ -35,7 +35,7 @@ def adas_canvas(
     labels: Mapping[str, str] | None = None,
     x_max: float | None = None,
     y_max: float | None = None,
-    extent: float = EXTENT,
+    extent: float = CENTERED_EXTENT,
     samples: int = DEFAULT_SAMPLES,
     show_natural_output: bool = True,
     productivity: float | None = None,
@@ -84,18 +84,41 @@ def adas_canvas(
             label=text("adas.curve.demand"),
         )
     )
-    if show_natural_output:
-        canvas.extend(_natural_layers(model, right, top, text))
     point = (equilibrium.output, equilibrium.price)
+    natural_anchor = (
+        equilibrium.natural_output,
+        model.supply.price(equilibrium.natural_output),
+    )
+    coincident = show_natural_output and all(
+        abs(first - second) <= max(abs(first), abs(second), 1.0) * 1e-9
+        for first, second in zip(point, natural_anchor, strict=True)
+    )
+    if show_natural_output:
+        canvas.extend(
+            _natural_layers(
+                model,
+                right,
+                top,
+                text,
+                mark_anchor=not coincident,
+                combined_marks=coincident,
+            )
+        )
     canvas.extend(
         drop_lines(
             point,
-            x_label=text("adas.mark.output"),
-            y_label=text("adas.mark.price"),
+            x_label=None if coincident else text("adas.mark.output"),
+            y_label=None if coincident else text("adas.mark.price"),
             layer_id="macro.adas.equilibrium.guide",
         )
     )
-    canvas.extend(marked_point(point, point_name(0), layer_id="macro.adas.equilibrium"))
+    canvas.extend(
+        marked_point(
+            point,
+            "$A=B$" if coincident else point_name(0),
+            layer_id="macro.adas.equilibrium",
+        )
+    )
     if productivity is not None:
         canvas.add(
             AxisNoteLayer(
@@ -111,24 +134,38 @@ def adas_canvas(
     return canvas
 
 
-def _natural_layers(model: ASADModel, right: float, top: float, text: Labels) -> list[Layer]:
+def _natural_layers(
+    model: ASADModel,
+    right: float,
+    top: float,
+    text: Labels,
+    *,
+    mark_anchor: bool = True,
+    combined_marks: bool = False,
+) -> list[Layer]:
     equilibrium = model.equilibrium()
     natural, expected = equilibrium.natural_output, equilibrium.expected_price
     anchor = (natural, model.supply.price(natural))
     layers: list[Layer] = [
         guide((natural, 0.0), (natural, HEADROOM * top), layer_id="macro.adas.natural"),
         axis_mark(
-            "x", natural, text("adas.mark.natural_output"), layer_id="macro.adas.natural.mark"
+            "x",
+            natural,
+            text("adas.mark.steady_output" if combined_marks else "adas.mark.natural_output"),
+            layer_id="macro.adas.natural.mark",
         ),
     ]
     if abs(anchor[1] - expected) < expected * 1e-9:
         layers += drop_lines(
             anchor,
             x_label=None,
-            y_label=text("adas.mark.expected_price"),
+            y_label=text(
+                "adas.mark.steady_price" if combined_marks else "adas.mark.expected_price"
+            ),
             layer_id="macro.adas.expected",
         )
-        layers += marked_point(anchor, point_name(1), layer_id="macro.adas.anchor")
+        if mark_anchor:
+            layers += marked_point(anchor, point_name(1), layer_id="macro.adas.anchor")
     return layers
 
 

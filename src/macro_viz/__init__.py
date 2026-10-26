@@ -3,7 +3,7 @@
 from macro_viz.config import Config
 from macro_viz.errors import LabelPlacementWarning, MacroVizError, ValidationError
 
-__version__ = "0.2.0.dev0"
+__version__ = "1.0.0b1"
 
 __all__ = [
     "Config",
