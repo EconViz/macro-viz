@@ -4,13 +4,12 @@ from __future__ import annotations
 
 from collections.abc import Sequence
 
-from mosaickit import Canvas, CanvasGrid, Span
+from mosaickit import Canvas, CanvasGrid, GridSpacing, Span
 from mosaickit.canvas.grid_link import GridLink
 from mosaickit.layout import clip_polyline, data_slope_for_display, extend_line_through
 
 from macro_viz.errors import ValidationError
 from macro_viz.visuals._theory import HEADROOM, trim
-from macro_viz.visuals.panels import PanelGrid
 from macro_viz.visuals.transmission._preset import (
     DERIVED_TAIL,
     GRID_COLUMN_GAP,
@@ -83,12 +82,10 @@ def grid(
     rows: int,
     cols: int,
 ) -> CanvasGrid:
-    return PanelGrid(
+    return CanvasGrid(
         cells,
         rows=rows,
         cols=cols,
         links=links,
-        column_gap=GRID_COLUMN_GAP,
-        row_gap=GRID_ROW_GAP,
-        outer=GRID_OUTER,
+        spacing=GridSpacing(column_gap=GRID_COLUMN_GAP, row_gap=GRID_ROW_GAP, outer=GRID_OUTER),
     )

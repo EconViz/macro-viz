@@ -13,7 +13,6 @@ from __future__ import annotations
 from collections import defaultdict
 from collections.abc import Callable, Collection, Mapping, Sequence
 from dataclasses import dataclass, replace
-from typing import Any
 
 from bezierkit import Point as BezierPoint
 from bezierkit.construction import RotationConnector
@@ -22,6 +21,7 @@ from mosaickit import (
     ArrowStyle,
     Canvas,
     CanvasGrid,
+    GridSpacing,
     Layer,
     MarkerLayer,
     PathLayer,
@@ -331,43 +331,6 @@ def _unit_height(
     panel_width = cell_width * extent(reference.cols, column_gap)
     cell_height = aspect * panel_width / extent(reference.rows, row_gap)
     return cell_height * extent(rows, row_gap) / inner / rows
-
-
-def _panel_renderer() -> Any:
-    """The matplotlib renderer with the row, column and outer gaps of a ``PanelGrid``.
-
-    Imported here because the renderer module needs the text engine, which static
-    figures built without it must not require until they are saved.
-    """
-    from mosaickit.rendering.matplotlib.renderer import MatplotlibRenderer
-
-    class PanelRenderer(MatplotlibRenderer):
-        def render_grid(self, grid: Any, cache: Any) -> Any:
-            result = super().render_grid(grid, cache)
-            result.figure.subplots_adjust(
-                left=grid.outer,
-                right=1 - grid.outer,
-                bottom=grid.outer,
-                top=1 - grid.outer,
-                wspace=grid.column_gap,
-                hspace=grid.row_gap,
-            )
-            return result
-
-    return PanelRenderer()
-
-
-class PanelGrid(CanvasGrid):
-    """A ``CanvasGrid`` drawn with its own gaps between rows and columns (shares of a cell)."""
-
-    def __init__(
-        self, *args: Any, column_gap: float, row_gap: float, outer: float, **kwargs: Any
-    ) -> None:
-        super().__init__(*args, **kwargs)
-        self.column_gap, self.row_gap, self.outer = column_gap, row_gap, outer
-
-    def _renderer(self, renderer: Any = None) -> Any:
-        return _panel_renderer() if renderer is None else super()._renderer(renderer)
 
 
 def _text_layer(
@@ -946,14 +909,12 @@ def linked_panels_canvas(
         GridLink(cell[first], start, cell[second], end, role="macro.link")
         for first, start, second, end in crossings
     ]
-    return PanelGrid(
+    return CanvasGrid(
         rows,
         rows=layout.rows,
         cols=layout.cols,
         links=links,
-        column_gap=column_gap,
-        row_gap=row_gap,
-        outer=outer,
+        spacing=GridSpacing(column_gap=column_gap, row_gap=row_gap, outer=outer),
     )
 
 
