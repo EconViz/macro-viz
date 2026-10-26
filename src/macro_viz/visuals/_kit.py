@@ -57,6 +57,12 @@ RISING_NAME_ORDER = (
 )
 """The same, for a rising curve whose name sits above its end."""
 
+CURVE_NAME_CLEARANCE = 3.5
+"""Free space in points kept between a curve name and any line or other name."""
+
+CURVE_NAME_WIDTH = 0.8
+"""Average character width in em assumed when placing curve names (a margin over the real one)."""
+
 TITLE_GAP = 6.0
 """Gap between an arrow tip and its axis title, in points."""
 
@@ -104,7 +110,9 @@ class MacroCanvas(Canvas):
             return
         options = active_config().settings.options
         size = options.label_size * options.text_scale
-        placement = PlacementOptions()
+        placement = PlacementOptions(
+            clearance=CURVE_NAME_CLEARANCE, character_width=CURVE_NAME_WIDTH
+        )
         scene, scale = _scene(self._spec, layers, options.point_size**0.5)
         for name in names:
             curve = next((p for p in layers if p.id == name.id[: -len(".label")]), None)

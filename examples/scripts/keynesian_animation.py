@@ -30,7 +30,7 @@ def main(argv: Sequence[str] | None = None) -> None:
         shift = analyze_autonomous_shift(model, amount)
         return multiplier_canvas(shift, show_path=False, x_max=limit)
 
-    values = linear_values(change / motion["frames"], change, motion["frames"])
+    values = linear_values(change / 2, change, motion["frames"])
     try:
         save_svg(
             builder,

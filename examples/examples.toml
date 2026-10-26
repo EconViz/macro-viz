@@ -50,8 +50,8 @@ productivity = 1.0
 demand_x_max = 240
 demand_y_max = 2.2
 autonomous_shock = 115
-caption_government = "Increase in government spending"
-caption_money = "Decrease in nominal money"
+caption_government = "Government spending up"
+caption_money = "Money supply down"
 
 [adas_animation]
 frames = 6
