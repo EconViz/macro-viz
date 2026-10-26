@@ -2,10 +2,14 @@
 
 from __future__ import annotations
 
+import sys
 from collections.abc import Sequence
+from pathlib import Path
+
+sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
 from common import load_example, setup
-from islm import build
+from model_common import build_islm
 
 from macro_viz.islm import ISLMExpectations
 from macro_viz.visuals import islm_expectations_canvas
@@ -13,7 +17,7 @@ from macro_viz.visuals import islm_expectations_canvas
 
 def main(argv: Sequence[str] | None = None) -> None:
     args, output = setup(__doc__ or "", argv)
-    base = build(load_example(args.data, "islm"))
+    base = build_islm(load_example(args.data, "islm"))
     data = load_example(args.data, "expectations")
     model = ISLMExpectations(base, data["expected_inflation"])
     suffix = args.suffix

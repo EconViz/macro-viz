@@ -2,7 +2,11 @@
 
 from __future__ import annotations
 
+import sys
 from collections.abc import Sequence
+from pathlib import Path
+
+sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
 from common import load_example, setup
 from panels_common import hidden, money_illusion, money_sas

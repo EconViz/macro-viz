@@ -3,15 +3,24 @@ from __future__ import annotations
 import subprocess
 import sys
 from pathlib import Path
+from typing import Any
 
 import pytest
 
 REPOSITORY_ROOT = Path(__file__).parents[1]
+SCRIPTS = REPOSITORY_ROOT / "examples" / "scripts"
+HELPERS = {"common", "model_common", "panels_common"}
+
+
+def script_path(name: str) -> Path:
+    """The one script called ``name`` in any topic folder, relative to the repository root."""
+    (found,) = SCRIPTS.glob(f"*/{name}")
+    return found.relative_to(REPOSITORY_ROOT)
 
 
 def run(script: str, *arguments: str) -> None:
     subprocess.run(
-        [sys.executable, f"examples/scripts/{script}", *arguments],
+        [sys.executable, str(script_path(script)), *arguments],
         cwd=REPOSITORY_ROOT,
         check=True,
         capture_output=True,
@@ -89,7 +98,7 @@ def test_example_output_follows_the_arguments(tmp_path: Path) -> None:
     subprocess.run(
         [
             sys.executable,
-            "examples/scripts/keynesian.py",
+            str(script_path("keynesian.py")),
             "--output",
             str(tmp_path / "nested"),
             "--suffix",
@@ -104,46 +113,55 @@ def test_example_output_follows_the_arguments(tmp_path: Path) -> None:
     assert (tmp_path / "nested" / "multiplier.png").stat().st_size > 0
 
 
+def _import_script(name: str) -> Any:
+    """Import the script called ``name`` from its topic folder, as ``python <path>`` would."""
+    import importlib.util
+
+    (path,) = SCRIPTS.glob(f"*/{name}.py") if name not in HELPERS else (SCRIPTS / f"{name}.py",)
+    sys.path.insert(0, str(SCRIPTS))
+    try:
+        spec = importlib.util.spec_from_file_location(f"example_{name}", path)
+        assert spec is not None and spec.loader is not None
+        module = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(module)
+        return module
+    finally:
+        sys.path.remove(str(SCRIPTS))
+
+
 def test_no_label_overlaps_a_line_or_another_label(tmp_path: Path) -> None:
     """Every example figure is drawn with label placement failures turned into errors."""
-    import importlib
     import warnings
 
     from mosaickit import LayoutWarning
 
-    scripts = str(REPOSITORY_ROOT / "examples" / "scripts")
-    sys.path.insert(0, scripts)
-    try:
-        with warnings.catch_warnings():
-            warnings.simplefilter("error", LayoutWarning)
-            for name in ("keynesian", "money", "adas", "adas_adjustment", "islm", "growth", "wsps"):
-                importlib.import_module(name).main(["--output", str(tmp_path)])
-    finally:
-        sys.path.remove(scripts)
+    with warnings.catch_warnings():
+        warnings.simplefilter("error", LayoutWarning)
+        for name in ("keynesian", "money", "adas", "adas_adjustment", "islm", "growth", "wsps"):
+            _import_script(name).main(["--output", str(tmp_path)])
 
 
-def _import_script(name: str) -> object:
-    import importlib
-
-    scripts = str(REPOSITORY_ROOT / "examples" / "scripts")
-    sys.path.insert(0, scripts)
-    try:
-        return importlib.import_module(name)
-    finally:
-        sys.path.remove(scripts)
+def test_every_example_script_lives_in_a_topic_folder() -> None:
+    """The scripts' parent folder names their output topic, so nothing else lists the topics."""
+    assert {path.stem for path in SCRIPTS.glob("*.py")} == HELPERS
+    folders = [path for path in SCRIPTS.iterdir() if path.is_dir() and path.name != "__pycache__"]
+    assert folders
+    assert all(any(folder.glob("*.py")) for folder in folders)
+    assert not list(SCRIPTS.glob("*/*/*.py"))
 
 
-def test_every_example_script_has_an_output_topic() -> None:
-    scripts = REPOSITORY_ROOT / "examples" / "scripts"
-    runnable = {path.stem for path in scripts.glob("*.py")} - {"common", "panels_common"}
-
-    assert set(_import_script("common").TOPICS) == runnable  # type: ignore[attr-defined]
-
-
+@pytest.mark.parametrize(
+    ("name", "topic", "image"),
+    [
+        ("keynesian", "keynesian", "multiplier.svg"),
+        ("islm_expectations", "islm", "islm_expected_inflation.svg"),
+    ],
+)
 def test_default_output_is_the_topic_folder(
-    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, name: str, topic: str, image: str
 ) -> None:
-    monkeypatch.setattr(_import_script("common"), "OUTPUT_ROOT", tmp_path)
-    _import_script("keynesian").main([])  # type: ignore[attr-defined]
+    script = _import_script(name)  # imports ``common`` from the scripts folder
+    monkeypatch.setattr(sys.modules["common"], "OUTPUT_ROOT", tmp_path)
+    script.main([])
 
-    assert (tmp_path / "keynesian" / "multiplier.svg").stat().st_size > 0
+    assert (tmp_path / topic / image).stat().st_size > 0

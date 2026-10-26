@@ -6,9 +6,19 @@ All notable changes to `macro-viz` will be documented in this file.
 
 ### Changed
 
-- The example scripts write to `examples/output/<topic>/` (one folder per script or theme, the
-  `*_animation.py` scripts to `animation/`) instead of one flat folder. `--output` still overrides
-  the folder as given; file names are unchanged. Generated files stay untracked.
+- The example scripts write to `examples/output/<topic>/` instead of one flat folder, and the
+  scripts themselves now sit in the same topic folders, `examples/scripts/<topic>/<script>.py`
+  (run them from the repository root, e.g. `python examples/scripts/islm/islm.py`). The output
+  folder is the script's parent folder, so there is no topic table to keep in sync. Topics:
+  `adas` (adas, adas_adjustment), `animation` (all `*_animation` scripts and `panels_animation`),
+  `growth`, `islm` (islm, islm_expectations), `keynesian`, `money` (money, central_bank_money,
+  liquidity_trap), `open_economy` (open_economy, open_asad, mundell_fleming), `panels`
+  (five_panel, four_panel, transmission) and `wsps`. Nine scripts that had a folder of their own
+  (`adas_adjustment`, `central_bank_money`, `islm_expectations`, `liquidity_trap`,
+  `mundell_fleming`, `open_asad`, `five_panel`, `four_panel`, `transmission`) now write to their
+  topic's folder. `--output` still overrides the folder as
+  given; file names are unchanged and generated files stay untracked. The shared ISLM and Solow
+  builders moved to `examples/scripts/model_common.py`.
 
 - `visuals.keynesian` is now a package of small modules (presets, shared base layers, consumption
   function, cross, multiplier, open-economy goods market) with the same import paths. Code is moved,
@@ -56,7 +66,7 @@ All notable changes to `macro-viz` will be documented in this file.
 - `macro_viz.transmission` and four fixed linked figures derive IS from goods markets, LM from
   money markets, AD from IS-LM, and AS from the labour market and production function. Standalone
   IS-LM and AD-AS remain available through `islm_canvas` and `adas_canvas`.
-- `save_gif` animates builders that return a grid of panels; `examples/scripts/panels_animation.py`
+- `save_gif` animates builders that return a grid of panels; `examples/scripts/animation/panels_animation.py`
   reveals the steps A, B, C of the capital and money-illusion scenarios one after another.
 - Initial installable package scaffold and development checks.
 - A registered `[macro.*]` MosaicKit configuration schema: `palette`, `language`, `color.*`,
