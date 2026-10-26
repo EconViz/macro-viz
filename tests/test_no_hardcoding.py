@@ -138,14 +138,6 @@ def test_transmission_figures_hold_no_bare_numbers() -> None:
 
 MAX_LINES = 450
 """A source file longer than this should be split into a package of smaller modules."""
-OVER_LIMIT = {
-    "visuals/panels.py",
-    "animation.py",
-    "panels/curves.py",
-    "visuals/adas.py",
-    "visuals/growth.py",
-}
-"""Files that already exceeded the limit before it was introduced; split them when touched."""
 
 
 def test_no_source_file_exceeds_the_line_limit() -> None:
@@ -154,9 +146,7 @@ def test_no_source_file_exceeds_the_line_limit() -> None:
         for path in _sources()
     }
     offenders = [
-        f"{name}: {count} lines"
-        for name, count in sorted(lines.items())
-        if count > MAX_LINES and name not in OVER_LIMIT
+        f"{name}: {count} lines" for name, count in sorted(lines.items()) if count > MAX_LINES
     ]
 
     assert offenders == []
