@@ -6,6 +6,10 @@ All notable changes to `macro-viz` will be documented in this file.
 
 ### Changed
 
+- Requires `mosaickit>=1.0.0rc12`. Linked-panel and derivation grids use `CanvasGrid(...,
+  spacing=GridSpacing(...))`; the private `PanelGrid` and its renderer subclass are removed. Rendered
+  figures are pixel-identical.
+
 - Requires `mosaickit>=1.0.0rc11`. The AD and AS derivation windows, tailed lines and the liquidity
   schedule use mosaickit's `centered_view`, `extend_line_through`, `clip_polyline` and
   `data_slope_for_display`; `trim` clips with `clip_polyline`. Rendered figures are unchanged.
