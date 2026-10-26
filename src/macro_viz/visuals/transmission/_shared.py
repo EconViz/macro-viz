@@ -6,6 +6,7 @@ from collections.abc import Sequence
 
 from mosaickit import Canvas, CanvasGrid, Span
 from mosaickit.canvas.grid_link import GridLink
+from mosaickit.layout import clip_polyline, data_slope_for_display, extend_line_through
 
 from macro_viz.errors import ValidationError
 from macro_viz.visuals._theory import HEADROOM, trim
@@ -43,22 +44,12 @@ def line_through(
     return trim(((0.0, intercept), (x_max, intercept + slope * x_max)), x_max, y_max)
 
 
-def short_line_through(
-    points: Sequence[tuple[float, float]],
-    x_max: float,
-    y_max: float,
-    tail_share: float,
+def tailed_line(
+    points: Sequence[tuple[float, float]], x_max: float, y_max: float, tail_share: float
 ) -> list[tuple[float, float]]:
     """Extend the chord by a share of its solved span instead of to the panel edges."""
-    first, last = sorted(points)[0], sorted(points)[-1]
-    dx, dy = last[0] - first[0], last[1] - first[1]
-    if abs(dx) < 1e-12:
-        raise ValidationError("a derived curve needs distinct horizontal values")
-    path = (
-        (first[0] - tail_share * dx, first[1] - tail_share * dy),
-        (last[0] + tail_share * dx, last[1] + tail_share * dy),
-    )
-    return trim(path, x_max, y_max)
+    chord = extend_line_through(sorted(points), before=tail_share)
+    return list(clip_polyline(chord, (0.0, HEADROOM * x_max), (0.0, HEADROOM * y_max)))
 
 
 def parallel_liquidity_schedule(
@@ -69,7 +60,7 @@ def parallel_liquidity_schedule(
     height: float,
 ) -> list[tuple[float, float]]:
     """A parallel falling schedule with a fixed screen slope through ``equilibrium``."""
-    data_slope = -LIQUIDITY_DISPLAY_SLOPE * y_max * width / (x_max * height)
+    data_slope = -data_slope_for_display(LIQUIDITY_DISPLAY_SLOPE, x_max, y_max, width, height)
     x, y = equilibrium
     reach = LIQUIDITY_TAIL_SHARE * x_max
     return trim(

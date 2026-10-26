@@ -6,6 +6,10 @@ All notable changes to `macro-viz` will be documented in this file.
 
 ### Changed
 
+- Requires `mosaickit>=1.0.0rc11`. The AD and AS derivation windows, tailed lines and the liquidity
+  schedule use mosaickit's `centered_view`, `extend_line_through`, `clip_polyline` and
+  `data_slope_for_display`; `trim` clips with `clip_polyline`. Rendered figures are unchanged.
+
 - Figures follow the manual panel style: dashed guides, only the price `p` lowercase (other variables
   uppercase italic, interest rate `R`), a thin 45-degree line with an arrowhead and `45°` at its tip,
   curved rotation arrows, animated GIF frames padded to one size, and a

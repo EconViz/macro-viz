@@ -7,6 +7,7 @@ from collections.abc import Mapping, Sequence
 from typing import cast
 
 from mosaickit import CanvasGrid
+from mosaickit.layout import centered_view
 
 from macro_viz.errors import ValidationError
 from macro_viz.panels import PanelState, Scenario, Step
@@ -37,11 +38,31 @@ def _window(
     # the screen slope of a line is its data slope times the visible width over the visible
     # height times the panel's height over width, which the 45-degree panel fixes
     wide = {v: 1 + MARGIN + pad[v] for v in (N, Y)}
-    supply = gap[W] / gap[N]
-    lengths[W] = supply * lengths[N] * wide[N] / wide[Y] / AS_SUPPLY_DISPLAY_SLOPE
-    lengths[P] = gap[P] / gap[Y] * lengths[Y] / AS_SRAS_DISPLAY_SLOPE
     room = {N: pad[N], Y: pad[Y], W: TOP_PAD, P: TOP_PAD}
-    origins = {v: (low[v] + high[v]) / 2 - lengths[v] * (1 + room[v] - MARGIN) / 2 for v in lengths}
+    views = {
+        N: centered_view(
+            [(low[N], low[W]), (high[N], high[W])],
+            gap_share=AS_GAP_SHARE,
+            display_slope=AS_SUPPLY_DISPLAY_SLOPE,
+            width=wide[Y],
+            height=wide[N],
+        ),
+        Y: centered_view(
+            [(low[Y], low[P]), (high[Y], high[P])],
+            gap_share=AS_GAP_SHARE,
+            display_slope=AS_SRAS_DISPLAY_SLOPE,
+        ),
+    }
+    spans = {N: views[N].x_span, W: views[N].y_span, Y: views[Y].x_span, P: views[Y].y_span}
+    starts = {
+        N: views[N].x_origin,
+        W: views[N].y_origin,
+        Y: views[Y].x_origin,
+        P: views[Y].y_origin,
+    }
+    # centre the pair of states inside the drawn area, which is MARGIN short of the span
+    lengths = spans
+    origins = {v: starts[v] - spans[v] * (room[v] - MARGIN) / 2 for v in spans}
     return lengths, origins
 
 
