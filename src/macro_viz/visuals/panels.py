@@ -12,7 +12,7 @@ from __future__ import annotations
 
 from collections import defaultdict
 from collections.abc import Callable, Collection, Mapping, Sequence
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from typing import Any
 
 from bezierkit import Point as BezierPoint
@@ -51,7 +51,14 @@ from macro_viz.panels import (
     shift_arrows,
 )
 from macro_viz.panels.arrows import ShiftArrow
-from macro_viz.panels.curves import DEFAULT_SAMPLES, KEY_DIGITS, CurveSpec, Subscripted
+from macro_viz.panels.curves import (
+    DEFAULT_SAMPLES,
+    KEY_DIGITS,
+    CurveSpec,
+    Ranges,
+    Subscripted,
+    clip,
+)
 from macro_viz.panels.layout import DIAGONAL, X_AXIS
 from macro_viz.panels.model import N, P, R, W, Y
 from macro_viz.panels.movement import MovementKind
@@ -197,6 +204,63 @@ def _rotation_arrows(
             points = tuple((x * extent[0], y * extent[1]) for x, y in placement.path)
             arrows.append(ShiftArrow(panel.key, family, points))
     return arrows
+
+
+def _shifted_states(
+    states: Sequence[PanelState], origins: Mapping[str, float]
+) -> tuple[PanelState, ...]:
+    """The states with every value measured from its axis origin."""
+    return tuple(
+        replace(
+            state,
+            values={name: value - origins.get(name, 0.0) for name, value in state.values.items()},
+        )
+        for state in states
+    )
+
+
+@dataclass(frozen=True, slots=True)
+class _Window:
+    """Curves are built from the model's own values, then moved into the shown window."""
+
+    origins: Mapping[str, float]
+    lengths: Mapping[str, float]
+    headroom: float
+
+    def _absolute(self, variable: str) -> float:
+        """Axis length that keeps the model-value clip at the top of the shown window."""
+        return self.origins.get(variable, 0.0) / self.headroom + self.lengths[variable]
+
+    def ranges(self) -> Ranges:
+        return Ranges({name: self._absolute(name) for name in self.lengths})
+
+    def options(
+        self,
+        base: CurveOptions,
+        states: Sequence[PanelState],
+        tails: Mapping[str, float],
+        demand_tail: float | None,
+    ) -> CurveOptions:
+        n = [state.values[N] for state in states]
+        n_length, y_length = self._absolute(N), self._absolute(Y)
+        tail_n = tails.get(N, 0.0)
+        return replace(
+            base,
+            span=((min(n) - tail_n) / n_length, (max(n) + tail_n) / n_length),
+            demand_start=(min(n) - (tail_n if demand_tail is None else demand_tail)) / n_length,
+            reach=tails.get(Y, base.reach * y_length) / y_length,
+        )
+
+    def shift(self, curves: Sequence[CurveSpec], panel: PanelSpec) -> list[CurveSpec]:
+        if not self.origins:
+            return list(curves)
+        dx, dy = self.origins.get(panel.x, 0.0), self.origins.get(panel.y, 0.0)
+        box_x, box_y = self.headroom * self.lengths[panel.x], self.headroom * self.lengths[panel.y]
+        shifted = []
+        for curve in curves:
+            moved = [(x - dx, y - dy) for x, y in curve.points]
+            shifted.append(replace(curve, points=clip(moved, box_x, box_y)))
+        return shifted
 
 
 @dataclass(frozen=True, slots=True)
@@ -759,6 +823,9 @@ def linked_panels_canvas(
     shift_arrows_on: bool | ArrowOptions = True,
     extent: float = DEFAULT_EXTENT,
     ranges: Mapping[str, float] | None = None,
+    origins: Mapping[str, float] | None = None,
+    tails: Mapping[str, float] | None = None,
+    demand_tail: float | None = None,
     pad: Mapping[str, float] | None = None,
     margin: float = MARGIN,
     top_pad: float = TOP_PAD,
@@ -781,6 +848,11 @@ def linked_panels_canvas(
     ``(variable, step label)`` pairs whose tick label is left out; ``ranges`` fixes the axis
     length of a variable.
 
+    ``origins`` moves the corner of the axes of a variable to that solved value (the axes then
+    show a window of the model rather than starting at zero) and ``ranges`` is the length of
+    the window. ``tails`` keeps curves of ``N`` and ``Y`` only that far (in model units) beyond
+    the outermost solved value, and ``demand_tail`` does so for the left end of labour demand.
+
     ``pad`` is the room right of each horizontal axis for curve names and ``top_pad`` the room
     above each vertical axis (shares of the axis length); ``margin`` the room under and left of
     the axes for tick labels; ``label_gap`` how far dashed paths stop short of a tick label;
@@ -798,11 +870,17 @@ def linked_panels_canvas(
     if unknown:
         raise ValidationError(f"unknown steps: {unknown}")
     lengths = axis_lengths(states, extent=extent, overrides=ranges, natural=lras)
+    corner = dict(origins or {})
+    solved = states
+    states = _shifted_states(states, corner)
     full_pad = {**DEFAULT_PAD, **(pad or {})}
     ctx = _Context(layout, states, lengths.lengths, full_pad, text, margin, top_pad)
     options = CurveOptions(
         mode=mode, samples=samples, sras=sras, shifted_sras=shifted_sras, lras=lras, ad=ad
     )
+    window = _Window(corner, lengths.lengths, options.headroom)
+    if corner:
+        options = window.options(options, solved, tails or {}, demand_tail)
     arrow_options = shift_arrows_on if isinstance(shift_arrows_on, ArrowOptions) else ArrowOptions()
     movement_kinds = scenario.movement_kinds()
     ticks, drawn = _ticks(ctx, hide_ticks)
@@ -821,7 +899,7 @@ def linked_panels_canvas(
             crossings.append(crossing)
     canvases: dict[str, Canvas] = {}
     for index, panel in enumerate(placed):
-        curves = curve_specs(panel, scenario, states, lengths, options)
+        curves = window.shift(curve_specs(panel, scenario, solved, window.ranges(), options), panel)
         arrows = (
             shift_arrows(
                 panel,

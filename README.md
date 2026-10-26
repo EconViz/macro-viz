@@ -95,6 +95,32 @@ AS-AD functions.
 
 ## Linked panels (four and five quadrants)
 
+### Curve derivations
+
+`macro_viz.transmission` provides four renderer-free sweeps and matching linked figures:
+
+- `ISDerivation` varies the stated real interest rates in an investment function;
+  `is_derivation_canvas` uses the fixed three-quadrant layout AE–Y (upper left), r–Y (lower
+  left), and r–I (lower right).
+- `LMDerivation` varies the stated output levels in real-money demand;
+  `lm_derivation_canvas` puts R–M/p on the left and R–Y on the right.
+- `ADDerivation` holds nominal money fixed, varies the stated price levels, and
+  `ad_derivation_canvas` links the resulting IS-LM equilibria to AD.
+- `ASDerivation` varies the stated price levels and `as_derivation_canvas` carries the solved
+  employment and output through labour market → production function → AS.
+
+The caller chooses the sweep values and supplies the economic interpretation. These objects do
+not infer a policy or event. The independent equilibrium figures remain `islm_canvas(model)` and
+`adas_canvas(model)`.
+
+```python
+from macro_viz.transmission import ADDerivation
+from macro_viz.visuals import ad_derivation_canvas
+
+derivation = ADDerivation(islm, nominal_money=20, prices=(1, 2))
+ad_derivation_canvas(derivation).save("ad-derivation.svg")
+```
+
 `four_panel_canvas(scenario)` draws the labour market, AD-AS, the production function and the
 45-degree line on one grid; `five_panel_canvas(scenario)` adds IS-LM above AD-AS so the right
 column shares one `Y` axis. A `Scenario` is a baseline `MacroEconomy` and labelled `Step`s (`A`, `B`,
