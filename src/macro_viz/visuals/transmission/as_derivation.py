@@ -19,9 +19,12 @@ from macro_viz.visuals.transmission._preset import (
     AS_DEMAND_TAIL,
     AS_GAP_SHARE,
     AS_PAD,
+    AS_PRIMARY_DEMAND_TAIL,
     AS_SRAS_DISPLAY_SLOPE,
+    AS_SRAS_TAIL,
     AS_SUPPLY_DISPLAY_SLOPE,
     AS_TAIL,
+    POINT_LABEL_ABOVE,
 )
 
 
@@ -54,15 +57,24 @@ def _window(
         ),
     }
     spans = {N: views[N].x_span, W: views[N].y_span, Y: views[Y].x_span, P: views[Y].y_span}
+    # With a genuine zero on the output axis, keep the two solved outputs visually centred by
+    # lengthening the range instead of translating the production function away from its origin.
+    old_y_span = spans[Y]
+    spans[Y] = (low[Y] + high[Y]) / (1 + pad[Y] - MARGIN)
+    spans[P] *= spans[Y] / old_y_span
     starts = {
         N: views[N].x_origin,
         W: views[N].y_origin,
         Y: views[Y].x_origin,
-        P: views[Y].y_origin,
+        P: (low[P] + high[P] - spans[P]) / 2,
     }
     # centre the pair of states inside the drawn area, which is MARGIN short of the span
     lengths = spans
     origins = {v: starts[v] - spans[v] * (room[v] - MARGIN) / 2 for v in spans}
+    # Employment and output keep their economic origin so the production function is the
+    # model's own concave F(N, K), beginning at (0, 0), rather than a translated segment.
+    origins[N] = 0.0
+    origins[Y] = 0.0
     return lengths, origins
 
 
@@ -89,9 +101,12 @@ def as_derivation_canvas(
     settings: dict[str, object] = {
         "ranges": lengths,
         "origins": origins,
-        "tails": {N: AS_TAIL * gap_n, Y: AS_TAIL * gap_y},
+        "tails": {N: AS_TAIL * gap_n, Y: AS_SRAS_TAIL * gap_y},
         "demand_tail": AS_DEMAND_TAIL * gap_n,
+        "primary_demand_tail": AS_PRIMARY_DEMAND_TAIL * gap_n,
         "pad": pad,
+        "point_label_offset": POINT_LABEL_ABOVE,
+        "production_from_origin": True,
     }
     return linked_panels_canvas(
         scenario,

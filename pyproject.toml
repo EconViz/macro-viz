@@ -1,6 +1,6 @@
 [project]
 name = "macro-viz"
-version = "0.2.0.dev0"
+version = "1.0.0b1"
 description = "Textbook macroeconomic analysis and diagrams for EconViz."
 readme = "README.md"
 authors = [{ name = "EconViz" }]
@@ -9,7 +9,7 @@ license-files = ["LICENSE"]
 requires-python = ">=3.10,<4.0"
 keywords = ["economics", "macroeconomics", "visualization", "education"]
 classifiers = [
-    "Development Status :: 2 - Pre-Alpha",
+    "Development Status :: 4 - Beta",
     "Intended Audience :: Education",
     "Operating System :: OS Independent",
     "Programming Language :: Python :: 3",

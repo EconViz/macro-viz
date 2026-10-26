@@ -17,8 +17,8 @@ DERIVATION_HEIGHT = 4.2
 AD_DERIVATION_WIDTH = 5.0
 """Wider panels keep IS and LM gentle on screen in the stacked AD derivation."""
 
-AD_DERIVATION_HEIGHT = 5.0
-"""Roomier panels for the stacked AD derivation."""
+AD_DERIVATION_HEIGHT = 4.5
+"""Slightly shorter panels keep the stacked AD derivation compact."""
 
 AD_TAIL = 0.9
 """Extra solved-state span kept beyond A and B on the derived AD line."""
@@ -41,11 +41,14 @@ AD_DISPLAY_SLOPE = 0.9
 LM_DERIVATION_HEIGHT = 3.2
 """Compact height of the wide, side-by-side LM derivation."""
 
+LM_DERIVATION_DISPLAY_SLOPE = 0.65
+"""Gentle screen slope of the derived LM curve."""
+
 DERIVED_TAIL = 0.25
 """Extra solved-state span kept beyond the outer point of a derived line."""
 
-INVESTMENT_TO_IS_SLOPE = 1.15
-"""The investment schedule is slightly steeper on screen than the derived IS curve."""
+INVESTMENT_TO_IS_SLOPE = 1.0
+"""The investment schedule and derived IS curve have the same screen slope."""
 
 LIQUIDITY_DISPLAY_SLOPE = 0.75
 """Absolute screen slope of the parallel liquidity-demand schedules."""
@@ -68,8 +71,14 @@ AS_SRAS_DISPLAY_SLOPE = 0.9
 AS_TAIL = 0.9
 """Extra solved-state span kept beyond A and B on the AS derivation lines."""
 
+AS_SRAS_TAIL = 1.1
+"""Slightly longer tail beyond A and B on the derived SRAS line."""
+
 AS_DEMAND_TAIL = 2.6
 """Extra solved-state span kept left of A on labour demand, so the shift arrow has room."""
+
+AS_PRIMARY_DEMAND_TAIL = 3.1
+"""Slightly longer left tail for the black baseline labour-demand schedule."""
 
 AS_PAD = {"N": 0.3, "Y": 0.08}
 """Room right of the N and Y axes for curve names in the AS derivation."""
@@ -79,6 +88,9 @@ TAIL_LABEL_ABOVE = (0.0, 8.0)
 
 TAIL_LABEL_RIGHT = (8.0, 0.0)
 """Offset in points of a fixed label right of the end of a falling schedule."""
+
+POINT_LABEL_ABOVE = (0.0, 7.0)
+"""Offset in points of a point name fixed just above its equilibrium marker."""
 
 PRODUCTION_Z_INDEX = 0
 """Stacking order of the 45-degree line: beneath every schedule and guide."""

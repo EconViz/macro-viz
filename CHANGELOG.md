@@ -4,8 +4,15 @@ All notable changes to `macro-viz` will be documented in this file.
 
 ## Unreleased
 
+## 1.0.0b1 - 2026-10-27
+
 ### Fixed
 
+- The standalone IS–LM and steady-state AD–AS figures now centre their equilibria in the plotting
+  area. IS and LM use equal, shorter display slopes; coincident AD–AS states use the unambiguous
+  labels `A=B`, `Y=Y_n` and `p=p^e`.
+- IS, LM, AD and AS derivation panels now keep state labels, curve colours, movement arrows,
+  cross-panel guides and axis marks consistent with the underlying before/after equilibria.
 - Curve names, point labels and tick labels are placed by MosaicKit's global label placer
   (`mosaickit>=1.0.0rc15`) instead of the per-package sliding heuristics, so every name sits next
   to its own curve end, inside the canvas, without touching a line, marker, arrow or another

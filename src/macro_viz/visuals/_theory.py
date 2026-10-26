@@ -48,6 +48,9 @@ PRIME = "'"
 EXTENT = 1.6
 """Default length of the horizontal axis as a multiple of the largest equilibrium value."""
 
+CENTERED_EXTENT = 2.0
+"""Axis multiple that places an unshifted equilibrium halfway along an origin-based axis."""
+
 ROTATION_SAMPLES = 48
 """Sampling resolution for BezierKit rotation markers."""
 

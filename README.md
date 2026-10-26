@@ -3,7 +3,7 @@
 `macro-viz` is the EconViz package for textbook macroeconomic analysis and diagrams. It targets
 introductory and intermediate models whose equations are given and need to be analysed or drawn.
 
-The current `0.2.0.dev0` milestone provides the Keynesian goods market (consumption function,
+The `1.0.0b1` beta provides the Keynesian goods market (consumption function,
 Keynesian cross, multiplier) as typed models and MosaicKit figures, and an optional animation
 layer. Statistics-style data charts and accounting-style box diagrams are out of scope: the package
 draws models whose equations are given.
@@ -278,8 +278,13 @@ by `glyphkit` arrives through MosaicKit and KineticKit.
 
 ## Installation
 
-The package has not been released. For development (add `--extra animation` for the animation
-tests):
+Install the beta from PyPI (add `--extra animation` for the animation extras):
+
+```bash
+uv add --prerelease allow macro-viz==1.0.0b1
+```
+
+For development:
 
 ```bash
 git clone https://github.com/EconViz/macro-viz.git

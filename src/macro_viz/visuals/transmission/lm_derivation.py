@@ -7,6 +7,7 @@ from functools import partial
 
 from mosaickit import CanvasGrid
 from mosaickit.diagram import PointLink, indexed, stack
+from mosaickit.layout import View
 
 from macro_viz.errors import ValidationError
 from macro_viz.i18n import Labels
@@ -15,6 +16,7 @@ from macro_viz.visuals._diagram import LINK, PRIMARY, SECONDARY, panel
 from macro_viz.visuals._theory import DEFAULT_SAMPLES, EXTENT, HEADROOM, point_name
 from macro_viz.visuals.transmission._preset import (
     DERIVATION_WIDTH,
+    LM_DERIVATION_DISPLAY_SLOPE,
     LM_DERIVATION_HEIGHT,
     LM_TAIL_SHARE,
     TAIL_LABEL_ABOVE,
@@ -47,7 +49,6 @@ def lm_derivation_canvas(
         max(state.market.supply, state.market.demand.quantity(0.0)) for state in states
     )
     rate_max = max(state.market.demand.rate_max for state in states) / HEADROOM
-    output_max = extent * max(state.output for state in states)
     market = panel(
         text,
         "transmission.axis.real_money",
@@ -58,12 +59,20 @@ def lm_derivation_canvas(
         width=width,
         height=height,
     )
+    lm_points = [(state.output, state.rate) for state in states]
+    (x0, y0), (x1, y1) = lm_points[0], lm_points[-1]
+    data_slope = abs((y1 - y0) / (x1 - x0))
+    output_span = LM_DERIVATION_DISPLAY_SLOPE * rate_max * width / (data_slope * height)
     lm = panel(
         text,
         "islm.axis.output",
         "islm.axis.rate",
-        x_max=output_max,
-        y_max=rate_max,
+        view=View(
+            x_origin=(x0 + x1 - output_span) / 2,
+            y_origin=0.0,
+            x_span=output_span,
+            y_span=rate_max,
+        ),
         width=width,
         height=height,
     )
@@ -80,7 +89,7 @@ def lm_derivation_canvas(
     )
     lm.line(
         name("curve"),
-        [(state.output, state.rate) for state in states],
+        lm_points,
         tail=LM_TAIL_SHARE,
         role=SECONDARY,
         label=text("islm.curve.lm"),

@@ -44,6 +44,7 @@ class _Window:
         states: Sequence[PanelState],
         tails: Mapping[str, float],
         demand_tail: float | None,
+        primary_demand_tail: float | None,
     ) -> CurveOptions:
         n = [state.values[N] for state in states]
         n_length, y_length = self._absolute(N), self._absolute(Y)
@@ -52,6 +53,9 @@ class _Window:
             base,
             span=((min(n) - tail_n) / n_length, (max(n) + tail_n) / n_length),
             demand_start=(min(n) - (tail_n if demand_tail is None else demand_tail)) / n_length,
+            primary_demand_start=None
+            if primary_demand_tail is None
+            else (min(n) - primary_demand_tail) / n_length,
             reach=tails.get(Y, base.reach * y_length) / y_length,
         )
 

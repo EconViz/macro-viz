@@ -5,7 +5,7 @@ from __future__ import annotations
 from collections.abc import Iterator
 
 import pytest
-from mosaickit import CanvasGrid, MarkerLayer
+from mosaickit import ArrowLayer, CanvasGrid, MarkerLayer, PointLabelLayer, TextLayer
 
 from macro_viz import Config, ValidationError
 from macro_viz.islm import ISLM
@@ -19,7 +19,10 @@ from macro_viz.visuals import (
     is_derivation_canvas,
     lm_derivation_canvas,
 )
-from macro_viz.visuals.transmission._preset import AS_SRAS_DISPLAY_SLOPE
+from macro_viz.visuals.transmission._preset import (
+    AS_SRAS_DISPLAY_SLOPE,
+    LM_DERIVATION_DISPLAY_SLOPE,
+)
 
 
 @pytest.fixture(autouse=True)
@@ -64,6 +67,24 @@ def test_lm_states_are_the_same_money_equilibria_drawn_on_lm(money: MoneyMarket)
         assert state.market.demand.quantity(state.rate) == pytest.approx(state.market.supply)
 
 
+def test_lm_derivation_centres_points_and_uses_a_gentle_slope(money: MoneyMarket) -> None:
+    grid = lm_derivation_canvas(LMDerivation(money, (20.0, 25.0)))
+    market_spec, market_points = _panel(grid, 0)
+    spec, points = _panel(grid, 1)
+    (x0, x1), (y0, y1) = spec.x_range, spec.y_range  # type: ignore[attr-defined]
+    (ax, ay), (bx, by) = sorted(points)
+
+    assert (ax + bx) / 2 == pytest.approx((x0 + x1) / 2)
+    assert spec.y_range == market_spec.y_range  # type: ignore[attr-defined]
+    assert sorted(point[1] for point in points) == pytest.approx(
+        sorted(point[1] for point in market_points)
+    )
+    screen_slope = (
+        abs((by - ay) / (bx - ax)) / ((y1 - y0) / (x1 - x0)) * (spec.height / spec.width)  # type: ignore[attr-defined]
+    )
+    assert screen_slope == pytest.approx(LM_DERIVATION_DISPLAY_SLOPE, rel=0.05)
+
+
 def test_ad_states_use_one_nominal_money_stock() -> None:
     derivation = ADDerivation(ISLM(40.0, 4.0, 10.0, 0.5, 2.0), 20.0, (1.0, 2.0))
 
@@ -82,6 +103,42 @@ def test_as_states_are_consistent_across_all_three_panels(economy: MacroEconomy)
         assert economy.production.output(state.employment, economy.capital) == pytest.approx(
             state.output
         )
+
+
+def test_as_primary_demand_extends_left_and_point_names_stay_on_markers(
+    economy: MacroEconomy,
+) -> None:
+    grid = as_derivation_canvas(ASDerivation(economy, (0.8, 1.2)))
+    labor = grid.placements[0].canvas.snapshot().layers
+    demands = {
+        layer.id: layer
+        for layer in labor
+        if layer.id
+        in {
+            "macro.panels.labor.labor_demand.0",
+            "macro.panels.labor.labor_demand.1",
+        }
+    }
+
+    primary = demands["macro.panels.labor.labor_demand.0"]
+    shifted = demands["macro.panels.labor.labor_demand.1"]
+    assert primary.path[0][0] < shifted.path[0][0]  # type: ignore[attr-defined]
+    markers = {layer.id: layer.points[0] for layer in labor if isinstance(layer, MarkerLayer)}
+    labels = {
+        layer.id.removesuffix(".label"): layer
+        for layer in labor
+        if isinstance(layer, TextLayer) and ".point." in layer.id
+    }
+    assert labels
+    assert all(label.position == markers[layer_id] for layer_id, label in labels.items())
+    assert all(label.offset == (0.0, 7.0) for label in labels.values())
+
+    production = next(
+        layer
+        for layer in grid.placements[2].canvas.snapshot().layers
+        if layer.id == "macro.panels.production.production.0"
+    )
+    assert production.path[0] == (0.0, 0.0)  # type: ignore[attr-defined]
 
 
 @pytest.mark.parametrize(
@@ -184,6 +241,82 @@ def test_is_derivation_has_three_fixed_panels_and_extended_curves(
         )
         assert min(point[0] for point in layer.path) < min(solved)  # type: ignore[attr-defined]
         assert max(point[0] for point in layer.path) > max(solved)  # type: ignore[attr-defined]
+
+
+def test_is_and_investment_curves_have_the_same_screen_slope(
+    goods: KeynesianCross,
+) -> None:
+    grid = is_derivation_canvas(ISDerivation(goods, 4.0, (2.0, 6.0)))
+
+    slopes = []
+    for cell, layer_id in (
+        (1, "macro.transmission.is.curve"),
+        (2, "macro.transmission.is.investment"),
+    ):
+        canvas = grid.placements[cell].canvas
+        layer = next(item for item in canvas.snapshot().layers if item.id == layer_id)
+        (x0, y0), (x1, y1) = layer.path  # type: ignore[attr-defined]
+        x_span = canvas.spec.x_range[1] - canvas.spec.x_range[0]
+        y_span = canvas.spec.y_range[1] - canvas.spec.y_range[0]
+        slopes.append(abs((y1 - y0) / y_span) / abs((x1 - x0) / x_span))
+
+    assert slopes[0] == pytest.approx(slopes[1])
+
+
+def test_is_derivation_emphasizes_the_high_rate_state_and_names_it_a(
+    goods: KeynesianCross,
+) -> None:
+    grid = is_derivation_canvas(ISDerivation(goods, 4.0, (2.0, 6.0)))
+    goods_layers = grid.placements[0].canvas.snapshot().layers
+
+    schedules = {
+        layer.id: layer.role
+        for layer in goods_layers
+        if layer.id in {"macro.transmission.is.goods.0", "macro.transmission.is.goods.1"}
+    }
+    assert schedules == {
+        "macro.transmission.is.goods.0": "macro.curve.primary",
+        "macro.transmission.is.goods.1": "macro.curve.panel",
+    }
+    for placement in grid.placements:
+        labels = {
+            layer.id: layer.text
+            for layer in placement.canvas.snapshot().layers
+            if isinstance(layer, PointLabelLayer) and ".equilibrium." in layer.id
+        }
+        assert labels
+        assert labels[next(name for name in labels if name.endswith(".0.label"))] == "$B$"
+        assert labels[next(name for name in labels if name.endswith(".1.label"))] == "$A$"
+
+
+def test_ad_derivation_keeps_p0_as_a_and_follows_the_state_change() -> None:
+    grid = ad_derivation_canvas(ADDerivation(ISLM(40.0, 4.0, 10.0, 0.5, 2.0), 20.0, (2.0, 1.0)))
+    top_layers = grid.placements[0].canvas.snapshot().layers
+    lm_roles = {
+        layer.id: layer.role
+        for layer in top_layers
+        if layer.id in {"macro.transmission.ad.lm.0", "macro.transmission.ad.lm.1"}
+    }
+
+    assert lm_roles == {
+        "macro.transmission.ad.lm.0": "macro.curve.secondary",
+        "macro.transmission.ad.lm.1": "macro.curve.secondary.shifted",
+    }
+    arrow = next(
+        layer
+        for layer in top_layers
+        if isinstance(layer, ArrowLayer) and layer.id == "macro.transmission.ad.lm.shift"
+    )
+    assert arrow.start[0] < arrow.end[0]
+    assert all(placement.canvas.spec.height == 4.5 for placement in grid.placements)
+    for placement in grid.placements:
+        labels = {
+            layer.id: layer.text
+            for layer in placement.canvas.snapshot().layers
+            if isinstance(layer, PointLabelLayer) and ".equilibrium." in layer.id
+        }
+        assert labels[next(name for name in labels if name.endswith(".0.label"))] == "$A$"
+        assert labels[next(name for name in labels if name.endswith(".1.label"))] == "$B$"
 
 
 def _panel(grid: CanvasGrid, index: int) -> tuple[object, list[tuple[float, float]]]:
