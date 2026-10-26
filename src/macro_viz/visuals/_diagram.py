@@ -11,7 +11,7 @@ from __future__ import annotations
 from typing import Any
 
 from mosaickit import Layer
-from mosaickit.diagram import TEX_LAYOUT_COMMANDS, Diagram, estimate_text_size
+from mosaickit.diagram import Diagram
 from mosaickit.layout import View
 from mosaickit.styles.nudge import Nudge
 
@@ -31,19 +31,10 @@ MOVEMENT = "macro.movement"
 LINK = "macro.link"
 """Roles of points, dotted guides, shift arrows and the links between linked panels."""
 
-CURVE_NAME_WIDTH = 0.8
-"""Average character width in em assumed when placing curve names (a margin over the real one)."""
 DIAGONAL_NAME_SHARE = 0.75
 """Share of the name gap a diagonal curve name keeps from its curve end."""
 ORIGIN_LABEL_ID = "axis.origin"
 """Locale id of the label at the corner of the axes."""
-
-
-def _text_size(label: str, font_size: float) -> tuple[float, float]:
-    """Size in points of a curve name; TeX layout commands take no room."""
-    return estimate_text_size(
-        label, font_size, char_width=CURVE_NAME_WIDTH, strip_commands=TEX_LAYOUT_COMMANDS
-    )
 
 
 def _nudge(layer: Layer) -> Nudge | None:
@@ -106,5 +97,4 @@ def panel(
         rising_names_upper_right=rising_names_upper_right,
         font_size=settings.options.label_size * settings.options.text_scale,
         name_diagonal=DIAGONAL_NAME_SHARE,
-        text_size=_text_size,
     )

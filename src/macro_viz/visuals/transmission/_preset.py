@@ -74,10 +74,6 @@ AS_DEMAND_TAIL = 2.6
 AS_PAD = {"N": 0.3, "Y": 0.08}
 """Room right of the N and Y axes for curve names in the AS derivation."""
 
-SHIFTED_NAME_SIDE = "above"
-"""Side of its end where a shifted curve's name goes. The wide ``LM(M/p)`` names of the old and
-the shifted line would overlap upper-right of both ends, so the shifted one sits above its end."""
-
 TAIL_LABEL_ABOVE = (0.0, 8.0)
 """Offset in points of a fixed label above the end of a vertical line."""
 

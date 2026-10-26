@@ -24,7 +24,6 @@ from macro_viz.visuals.transmission._preset import (
     AD_LM_TAIL,
     AD_TAIL,
     LM_DISPLAY_SLOPE,
-    SHIFTED_NAME_SIDE,
 )
 from macro_viz.visuals.transmission._shared import SPACING, layer_id
 
@@ -120,7 +119,6 @@ def ad_derivation_canvas(
             name("lm", index),
             [(state.model.lm_output(rate), rate) for rate in rates],
             tail=AD_LM_TAIL,
-            side=None if index == 0 else SHIFTED_NAME_SIDE,
             role=SECONDARY if index == 0 else SHIFTED,
             label=text("panels.curve.lm").format(
                 money=money, price=indexed(price, index).strip("$")
