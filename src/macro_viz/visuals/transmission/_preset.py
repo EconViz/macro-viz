@@ -52,3 +52,21 @@ LIQUIDITY_TAIL_SHARE = 0.3
 
 LM_TAIL_SHARE = 0.9
 """Extra solved-state span shown at either end of the derived LM segment."""
+
+AS_GAP_SHARE = 0.16
+"""Distance between A and B as a share of the N and Y axes in the AS derivation."""
+
+AS_SUPPLY_DISPLAY_SLOPE = 0.8
+"""Absolute screen slope of the labour-supply line in the AS derivation."""
+
+AS_SRAS_DISPLAY_SLOPE = 0.9
+"""Absolute screen slope of the SRAS line in the AS derivation."""
+
+AS_TAIL = 0.9
+"""Extra solved-state span kept beyond A and B on the AS derivation lines."""
+
+AS_DEMAND_TAIL = 1.4
+"""Extra solved-state span kept left of A on labour demand, so the shift arrow has room."""
+
+AS_PAD = {"N": 0.3, "Y": 0.08}
+"""Room right of the N and Y axes for curve names in the AS derivation."""

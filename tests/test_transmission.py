@@ -19,6 +19,7 @@ from macro_viz.visuals import (
     is_derivation_canvas,
     lm_derivation_canvas,
 )
+from macro_viz.visuals.transmission._preset import AS_SRAS_DISPLAY_SLOPE
 
 
 @pytest.fixture(autouse=True)
@@ -183,3 +184,41 @@ def test_is_derivation_has_three_fixed_panels_and_extended_curves(
         )
         assert min(point[0] for point in layer.path) < min(solved)  # type: ignore[attr-defined]
         assert max(point[0] for point in layer.path) > max(solved)  # type: ignore[attr-defined]
+
+
+def _panel(grid: CanvasGrid, index: int) -> tuple[object, list[tuple[float, float]]]:
+    """The spec of panel ``index`` and its marker points."""
+    canvas = grid.placements[index].canvas
+    snapshot = canvas.snapshot()
+    points = [
+        p for layer in snapshot.layers if isinstance(layer, MarkerLayer) for p in layer.points
+    ]
+    return canvas.spec, points
+
+
+def test_as_solved_points_sit_at_the_centre_of_their_panels(economy: MacroEconomy) -> None:
+    grid = as_derivation_canvas(ASDerivation(economy, (0.8, 1.2)))
+
+    for index in (0, 1):
+        spec, points = _panel(grid, index)
+        (x0, x1), (y0, y1) = spec.x_range, spec.y_range  # type: ignore[attr-defined]
+        centre = (sum(p[0] for p in points) / len(points), sum(p[1] for p in points) / len(points))
+        assert centre == pytest.approx(((x0 + x1) / 2, (y0 + y1) / 2), rel=0.05)
+
+
+def test_as_lines_are_gentle_on_screen(economy: MacroEconomy) -> None:
+    grid = as_derivation_canvas(ASDerivation(economy, (0.8, 1.2)))
+    spec, points = _panel(grid, 1)
+    (x0, x1), (y0, y1) = spec.x_range, spec.y_range  # type: ignore[attr-defined]
+    aspect = (y1 - y0) / (x1 - x0)
+    (ax, ay), (bx, by) = sorted(points)
+    screen = abs((by - ay) / (bx - ax)) / aspect * _panel_ratio(grid)
+
+    assert screen == pytest.approx(AS_SRAS_DISPLAY_SLOPE, rel=0.05)
+
+
+def _panel_ratio(grid: CanvasGrid) -> float:
+    """Height over width of the (square, 45-degree) output panel in data units."""
+    spec = grid.placements[3].canvas.spec
+    (x0, x1), (y0, y1) = spec.x_range, spec.y_range
+    return float((y1 - y0) / (x1 - x0))
