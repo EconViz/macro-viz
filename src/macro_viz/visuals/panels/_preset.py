@@ -33,14 +33,8 @@ TOP_PAD = 0.08
 MARGIN = 0.14
 """Room under and left of each axis for tick labels, as a share of the axis length."""
 
-TICK_CLEARANCE = 0.1
-"""Tick labels closer than this share of the panel's range lean away from each other."""
-
 LABEL_GAP = 0.13
 """How much of a panel's height a dashed path stops short of a tick label under an axis."""
-
-UPPER_RIGHT_TAIL_LABELS = frozenset(("lm", "sras"))
-"""Curve families whose names stay directly above-right of their upper-right endpoint."""
 
 SYMBOL_IDS = {
     N: "panels.var.employment",
@@ -50,11 +44,6 @@ SYMBOL_IDS = {
     R: "panels.var.rate",
 }
 """The locale id of each variable's symbol."""
-
-POINTS_PER_INCH = 72.0
-
-TICK_OFFSET = 4.0
-"""Distance in points between an axis and its tick label."""
 
 DIAGONAL_REACH = 0.97
 """The share of the axis the 45-degree line runs before its arrowhead."""

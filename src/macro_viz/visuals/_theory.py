@@ -29,6 +29,7 @@ from mosaickit.layout import clip_polyline
 from macro_viz.errors import ValidationError
 from macro_viz.i18n import Labels
 from macro_viz.visuals._kit import MacroCanvas, axes_layers, canvas_spec, new_canvas
+from macro_viz.visuals._labels import family_end
 
 Point = tuple[float, float]
 
@@ -133,17 +134,16 @@ def curve(
 ) -> list[Layer]:
     """A curve and, when ``label`` is given, its name at the right-hand end.
 
-    The name sits diagonally off the end, clear of every line (see ``MacroCanvas``).
+    The name is placed with every other label, clear of every line (see ``MacroCanvas``).
     """
     layers: list[Layer] = [PathLayer(tuple(points), id=layer_id, role=role, z_index=z_index)]
     if label:
-        end = max(points, key=lambda point: (point[0], point[1]))
-        layers.append(_end_label(label, end, layer_id, role, z_index + 5))
+        layers.append(_end_label(label, family_end(points), layer_id, role, z_index + 5))
     return layers
 
 
 def _end_label(label: str, end: Point, layer_id: str, role: str, z_index: int) -> TextLayer:
-    """The name of a curve at its end; ``MacroCanvas`` moves it to the first free diagonal."""
+    """The name of a curve at its end; ``MacroCanvas`` places it."""
     return TextLayer(end, label, id=f"{layer_id}.label", role=role, z_index=z_index)
 
 

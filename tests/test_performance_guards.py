@@ -66,14 +66,14 @@ def test_curve_names_are_placed_once_however_many_layers_are_added(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     placements = 0
-    original = MacroCanvas._place_curve_names
+    original = MacroCanvas._place_labels
 
     def counting(self: MacroCanvas) -> None:
         nonlocal placements
         placements += 1
         original(self)
 
-    monkeypatch.setattr(MacroCanvas, "_place_curve_names", counting)
+    monkeypatch.setattr(MacroCanvas, "_place_labels", counting)
     canvas = new_canvas(canvas_spec((0, 10), (0, 10), width=4, height=3, title=None))
     for index in range(1, 6):
         canvas.add(PathLayer(((0, index), (10, index)), id=f"c{index}", role="macro.curve"))

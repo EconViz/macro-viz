@@ -52,7 +52,8 @@ def test_group_nudges_from_the_settings_move_labels_by_group() -> None:
         {"macro": {"label": {"curve": {"top": "3pt", "right": "2pt"}, "mark": {"left": "4pt"}}}}
     ).use()
     canvas = new_canvas(canvas_spec((0, 1), (0, 1), width=3, height=3, title=None))
-    canvas.add(TextLayer((0, 0), "A", id="macro.test.curve.label", role="macro.curve.primary"))
+    canvas.add(PathLayer(((0, 0), (1, 1)), id="macro.test.curve", role="macro.curve.primary"))
+    canvas.add(TextLayer((1, 1), "A", id="macro.test.curve.label", role="macro.curve.primary"))
     canvas.add(TextLayer((0, 0), "B", id="macro.test.mark", role="macro.mark"))
     canvas.add(TextLayer((0, 0), "C", id="axes.x.label", role="axes"))
     layers = {layer.id: layer for layer in canvas.snapshot().layers}
@@ -65,9 +66,10 @@ def test_group_nudges_from_the_settings_move_labels_by_group() -> None:
 
 def test_without_settings_labels_carry_no_nudge() -> None:
     canvas = new_canvas(canvas_spec((0, 1), (0, 1), width=3, height=3, title=None))
-    canvas.add(TextLayer((0, 0), "A", id="macro.test.curve.label", role="macro.curve.primary"))
+    canvas.add(PathLayer(((0, 0), (1, 1)), id="macro.test.curve", role="macro.curve.primary"))
+    canvas.add(TextLayer((1, 1), "A", id="macro.test.curve.label", role="macro.curve.primary"))
 
-    assert canvas.snapshot().layers[0].nudge is None  # type: ignore[attr-defined]
+    assert canvas.snapshot().layers[1].nudge is None  # type: ignore[attr-defined]
 
 
 def test_moved_curves_and_movement_arrows_are_solid_and_thinner_than_curves() -> None:
