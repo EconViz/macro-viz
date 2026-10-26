@@ -236,11 +236,14 @@ is saved.
 Tracked executable examples live in `examples/scripts`; their generated images are intentionally
 ignored. Sample data and titles are in `examples/examples.toml`, the manual look (black and white,
 white background, TeX Gyre Pagella, direct labels, arrowed axes) in `examples/econ-viz.toml`.
-Both, the output folder, and the image format are command-line arguments. Regenerate locally with:
+Both, the output folder, and the image format are command-line arguments. Each script writes to
+its own folder `examples/output/<topic>/` (for example `keynesian.py` to
+`examples/output/keynesian/`, all `*_animation.py` scripts to `examples/output/animation/`) unless
+`--output` is given; the topics are listed in `examples/scripts/common.py`. Regenerate locally with:
 
 ```bash
-uv run python examples/scripts/keynesian.py --output examples/output
-uv run python examples/scripts/keynesian_animation.py --output examples/output
+uv run python examples/scripts/keynesian.py
+uv run python examples/scripts/keynesian_animation.py
 ```
 
 The scripts look for the font files in `$MACRO_VIZ_FONT_DIR` and in a TeX Live installation, and

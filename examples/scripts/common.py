@@ -26,6 +26,33 @@ EXAMPLES = Path(__file__).resolve().parent.parent
 FONT_DIRECTORIES_ENV = "MACRO_VIZ_FONT_DIR"
 TEX_FONT_SUBDIRECTORIES = ("fonts/opentype/public/tex-gyre", "fonts/opentype/public/tex-gyre-math")
 IMAGE_SUFFIXES = (".svg", ".png", ".gif")
+OUTPUT_ROOT = EXAMPLES / "output"
+ANIMATION_TOPIC = "animation"
+# Output folder under ``OUTPUT_ROOT`` for each script, by file stem.
+TOPICS = {
+    "adas": "adas",
+    "adas_adjustment": "adas_adjustment",
+    "central_bank_money": "central_bank_money",
+    "five_panel": "five_panel",
+    "four_panel": "four_panel",
+    "growth": "growth",
+    "islm": "islm",
+    "islm_expectations": "islm_expectations",
+    "keynesian": "keynesian",
+    "liquidity_trap": "liquidity_trap",
+    "money": "money",
+    "mundell_fleming": "mundell_fleming",
+    "open_asad": "open_asad",
+    "open_economy": "open_economy",
+    "transmission": "transmission",
+    "wsps": "wsps",
+    "adas_animation": ANIMATION_TOPIC,
+    "growth_animation": ANIMATION_TOPIC,
+    "islm_animation": ANIMATION_TOPIC,
+    "keynesian_animation": ANIMATION_TOPIC,
+    "money_animation": ANIMATION_TOPIC,
+    "panels_animation": ANIMATION_TOPIC,
+}
 
 _workspace = tempfile.TemporaryDirectory(prefix="macro-viz-examples-")
 
@@ -33,7 +60,12 @@ _workspace = tempfile.TemporaryDirectory(prefix="macro-viz-examples-")
 def parse_arguments(description: str, argv: Sequence[str] | None = None) -> argparse.Namespace:
     """The command line every example understands."""
     parser = argparse.ArgumentParser(description=description)
-    parser.add_argument("--output", type=Path, default=EXAMPLES / "output", help="output folder")
+    parser.add_argument(
+        "--output",
+        type=Path,
+        default=None,
+        help="output folder (default: examples/output/<topic> of the script)",
+    )
     parser.add_argument(
         "--config", type=Path, default=EXAMPLES / "econ-viz.toml", help="settings file"
     )
@@ -105,6 +137,9 @@ def load_settings(config: Path) -> Config:
 def setup(description: str, argv: Sequence[str] | None = None) -> tuple[argparse.Namespace, Path]:
     """Parse arguments, activate the settings, create the output folder."""
     args = parse_arguments(description, argv)
+    if args.output is None:
+        script = Path(sys._getframe(1).f_globals["__file__"]).stem
+        args.output = OUTPUT_ROOT / TOPICS[script]
     load_settings(args.config).use()
     args.output.mkdir(parents=True, exist_ok=True)
     return args, args.output
