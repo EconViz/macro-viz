@@ -45,6 +45,18 @@ CURVE_NAME_ORDER = (
 )
 """Where a curve's name goes off its end, first choice first."""
 
+RISING_NAME_ORDER = (
+    "upper-right",
+    "right",
+    "lower-right",
+    "above",
+    "upper-left",
+    "lower-left",
+    "left",
+    "below",
+)
+"""The same, for a rising curve whose name sits above its end."""
+
 TITLE_GAP = 6.0
 """Gap between an arrow tip and its axis title, in points."""
 
@@ -55,6 +67,7 @@ class MacroCanvas(Canvas):
     def __init__(self, *args: Any, label_nudges: Mapping[str, Nudge] | None = None, **kwargs: Any):
         self._label_nudges = dict(label_nudges or {})
         self._spec: CanvasSpec | None = args[0] if args else kwargs.get("spec")
+        self.rising_names_above = False
         super().__init__(*args, **kwargs)
 
     def _nudged(self, layer: Layer) -> Layer:
@@ -100,7 +113,9 @@ class MacroCanvas(Canvas):
             end = max(curve.path, key=lambda point: (point[0], point[1]))
             anchor = (end[0] * scale[0], end[1] * scale[1])
             box_size = text_box(str(name.text), size, placement)
-            placed = place(anchor, box_size, scene, placement, CURVE_NAME_ORDER)
+            rising = len(curve.path) > 1 and curve.path[-1][1] > curve.path[0][1]
+            order = RISING_NAME_ORDER if self.rising_names_above and rising else CURVE_NAME_ORDER
+            placed = place(anchor, box_size, scene, placement, order)
             scene.boxes.append(placed.box)
             side = placed.anchor
             moved = replace(name, anchor=side, offset=_offset(placed.position, anchor))

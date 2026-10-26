@@ -35,6 +35,7 @@ def test_examples_write_nonempty_images(tmp_path: Path) -> None:
     run("islm_expectations.py", "--output", str(tmp_path))
     run("central_bank_money.py", "--output", str(tmp_path))
     run("liquidity_trap.py", "--output", str(tmp_path))
+    run("transmission.py", "--output", str(tmp_path))
 
     images = {image.stem: image for image in tmp_path.glob("*.svg")}
     assert {
@@ -72,6 +73,12 @@ def test_examples_write_nonempty_images(tmp_path: Path) -> None:
         "solow_log_path",
         "islm_crowding_out",
         "islm_monetary_expansion",
+        "is_derivation",
+        "lm_derivation",
+        "ad_derivation",
+        "as_derivation",
+        "islm_standalone",
+        "adas_standalone",
     } <= set(images)
     assert all(image.stat().st_size > 0 for image in images.values())
 

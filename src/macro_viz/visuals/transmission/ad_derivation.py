@@ -13,17 +13,30 @@ from macro_viz.transmission import ADDerivation
 from macro_viz.visuals._theory import (
     DEFAULT_SAMPLES,
     EXTENT,
-    HEADROOM,
-    axis_mark,
     curve,
+    drop_lines,
     marked_point,
     point_name,
+    shift_arrow,
     theory_canvas,
-    trim,
 )
-from macro_viz.visuals.islm import is_curve, lm_curve
-from macro_viz.visuals.transmission._preset import DERIVATION_HEIGHT, DERIVATION_WIDTH
-from macro_viz.visuals.transmission._shared import grid, indexed
+from macro_viz.visuals.islm import lm_curve
+from macro_viz.visuals.transmission._preset import (
+    AD_DERIVATION_HEIGHT,
+    AD_DERIVATION_WIDTH,
+    AD_DISPLAY_SLOPE,
+    AD_GAP_SHARE,
+    AD_ISLM_TAIL,
+    AD_LM_TAIL,
+    AD_TAIL,
+    LM_DISPLAY_SLOPE,
+)
+from macro_viz.visuals.transmission._shared import grid, indexed, short_line_through
+
+
+def _data_slope(points: list[tuple[float, float]]) -> float:
+    (x0, y0), (x1, y1) = points[0], points[-1]
+    return abs((y1 - y0) / (x1 - x0))
 
 
 def ad_derivation_canvas(
@@ -33,22 +46,37 @@ def ad_derivation_canvas(
     labels: Mapping[str, str] | None = None,
     extent: float = EXTENT,
     samples: int = DEFAULT_SAMPLES,
-    width: float = DERIVATION_WIDTH,
-    height: float = DERIVATION_HEIGHT,
+    width: float = AD_DERIVATION_WIDTH,
+    height: float = AD_DERIVATION_HEIGHT,
 ) -> CanvasGrid:
     """Draw IS-LM equilibria above the AD curve traced out as ``p`` changes."""
     states = derivation.states
     if min(state.rate for state in states) < 0:
         raise ValidationError("equilibrium rates must be non-negative to draw an AD derivation")
     text = Labels(labels)
-    output_max = extent * max(state.output for state in states)
-    price_max = max(state.price for state in states) / HEADROOM
-    rate_limit = max(state.rate for state in states) / HEADROOM
-    if rate_limit <= 0:
-        raise ValidationError("at least one equilibrium rate must be positive")
+    first, last = states[0], states[-1]
+    # plot in display coordinates: A and B sit at the centre of each panel and the axis
+    # lengths follow the screen slopes, so IS, LM and AD read as gentle lines
+    aspect = height / width
+    gap = abs(last.output - first.output)
+    if gap <= 0:
+        raise ValidationError("the solved outputs must differ to draw an AD derivation")
+    span = gap / AD_GAP_SHARE
+    lm_slope = _data_slope(lm_curve(first.model, 1.0, 2))
+    rate_span = lm_slope * span * aspect / LM_DISPLAY_SLOPE
+    ad_slope = abs(last.price - first.price) / gap
+    price_span = ad_slope * span * aspect / AD_DISPLAY_SLOPE
+    output_origin = (first.output + last.output) / 2 - span / 2
+    rate_origin = (first.rate + last.rate) / 2 - rate_span / 2
+    price_origin = (first.price + last.price) / 2 - price_span / 2
+
+    def shown(output: float, vertical: float, origin: float) -> tuple[float, float]:
+        return output - output_origin, vertical - origin
+
+    rates = sorted({state.rate for state in states})
     top = theory_canvas(
-        output_max,
-        rate_limit,
+        span,
+        rate_span,
         labels=text,
         x_label_id="islm.axis.output",
         y_label_id="islm.axis.rate",
@@ -56,17 +84,23 @@ def ad_derivation_canvas(
         width=width,
         height=height,
     )
+    top.rising_names_above = True
     top.extend(
         curve(
-            trim(is_curve(states[0].model, rate_limit, samples), output_max, rate_limit),
+            short_line_through(
+                [shown(first.model.is_output(rate), rate, rate_origin) for rate in rates],
+                span,
+                rate_span,
+                AD_ISLM_TAIL,
+            ),
             layer_id="macro.transmission.ad.is",
             role="macro.curve.primary",
             label=text("islm.curve.is"),
         )
     )
     bottom = theory_canvas(
-        output_max,
-        price_max,
+        span,
+        price_span,
         labels=text,
         x_label_id="adas.axis.output",
         y_label_id="adas.axis.price",
@@ -76,10 +110,23 @@ def ad_derivation_canvas(
     )
     bottom.extend(
         curve(
-            sorted((state.output, state.price) for state in states),
+            short_line_through(
+                [shown(state.output, state.price, price_origin) for state in states],
+                span,
+                price_span,
+                AD_TAIL,
+            ),
             layer_id="macro.transmission.ad.curve",
-            role="macro.curve.primary",
+            role="macro.curve.secondary",
             label=text("adas.curve.demand"),
+        )
+    )
+    # the money-market line moves left as the price rises, from A at its own rate
+    top.add(
+        shift_arrow(
+            shown(first.output, first.rate, rate_origin),
+            shown(last.model.lm_output(first.rate), first.rate, rate_origin),
+            layer_id="macro.transmission.ad.lm.shift",
         )
     )
     links = []
@@ -88,7 +135,12 @@ def ad_derivation_canvas(
     for index, state in enumerate(states):
         top.extend(
             curve(
-                trim(lm_curve(state.model, rate_limit, samples), output_max, rate_limit),
+                short_line_through(
+                    [shown(state.model.lm_output(rate), rate, rate_origin) for rate in rates],
+                    span,
+                    rate_span,
+                    AD_LM_TAIL,
+                ),
                 layer_id=f"macro.transmission.ad.lm.{index}",
                 role="macro.curve.secondary" if index == 0 else "macro.curve.secondary.shifted",
                 label=text("panels.curve.lm").format(
@@ -97,8 +149,8 @@ def ad_derivation_canvas(
                 ),
             )
         )
-        upper = (state.output, state.rate)
-        lower = (state.output, state.price)
+        upper = shown(state.output, state.rate, rate_origin)
+        lower = shown(state.output, state.price, price_origin)
         top.extend(
             marked_point(
                 upper,
@@ -113,12 +165,12 @@ def ad_derivation_canvas(
                 layer_id=f"macro.transmission.ad.equilibrium.{index}",
             )
         )
-        bottom.add(
-            axis_mark(
-                "y",
-                state.price,
-                indexed(text("adas.mark.price"), index),
-                layer_id=f"macro.transmission.ad.price.{index}",
+        bottom.extend(
+            drop_lines(
+                lower,
+                x_label=indexed(text("adas.mark.output"), index),
+                y_label=indexed(text("adas.mark.price"), index),
+                layer_id=f"macro.transmission.ad.drop.{index}",
             )
         )
         links.append(GridLink(0, upper, 1, lower, role="macro.link"))

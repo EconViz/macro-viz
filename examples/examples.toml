@@ -203,3 +203,18 @@ autonomous_slump = 35
 [panels_animation]
 fps = 1
 dpi = 60
+
+[transmission]
+is_rates = [7.0, 3.0]
+is_autonomous_consumption = 0.0
+is_government = 0.0
+is_propensity = 0.4
+investment_at_zero = 245.0
+investment_sensitivity = 27.0
+lm_outputs = [100.0, 130.0]
+ad_prices = [1.0, 3.0]
+nominal_money = 60.0
+ad_autonomous = 280.0
+ad_sensitivity = 60.0
+ad_real_money_demand = 30.0
+as_prices = [0.8, 1.2]

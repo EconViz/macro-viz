@@ -77,6 +77,8 @@ class CurveOptions:
     samples: int = DEFAULT_SAMPLES
     span: tuple[float, float] = (0.1, 0.8)
     """The part of the ``N`` axis (as shares of its length) that curves of ``N`` cover."""
+    demand_start: float = 0.02
+    """Where labour-demand curves begin on the ``N`` axis, as a share of its length."""
     reach: float = 0.18
     """How far a straight line runs beyond its outermost point, as a share of the ``Y`` axis."""
     headroom: float = 0.92
@@ -246,6 +248,11 @@ class _Builder:
     # -- labour market and production ---------------------------------------------------
     def labor(self, panel: PanelSpec) -> list[CurveSpec]:
         grid = self._n_grid()
+        demand_grid = _linspace(
+            self.options.demand_start * self.ranges[N],
+            self.options.span[1] * self.ranges[N],
+            self.options.samples,
+        )
         specs = []
         demand = self._unique(lambda s: _key(s.values[P], s.economy.capital))
         for key, owners in demand:
@@ -258,7 +265,7 @@ class _Builder:
                     _first_index(self.states, _has_capital(capital), "K"),
                 ),
             }
-            points = [(n, state.economy.labor_demand(n, price)) for n in grid]
+            points = [(n, state.economy.labor_demand(n, price)) for n in demand_grid]
             specs.append(
                 self._spec(
                     panel,

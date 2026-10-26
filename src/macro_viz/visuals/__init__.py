@@ -29,6 +29,12 @@ from macro_viz.visuals.money import (
 )
 from macro_viz.visuals.open_economy import interest_parity_canvas, open_islm_canvas
 from macro_viz.visuals.panels import five_panel_canvas, four_panel_canvas, linked_panels_canvas
+from macro_viz.visuals.transmission import (
+    ad_derivation_canvas,
+    as_derivation_canvas,
+    is_derivation_canvas,
+    lm_derivation_canvas,
+)
 
 __all__ = [
     "interest_parity_canvas",
@@ -42,16 +48,20 @@ __all__ = [
     "solow_log_path_canvas",
     "wsps_canvas",
     "adas_adjustment_canvas",
+    "ad_derivation_canvas",
     "adas_canvas",
+    "as_derivation_canvas",
     "aggregate_demand_canvas",
     "aggregate_supply_canvas",
     "consumption_function_canvas",
     "islm_canvas",
+    "is_derivation_canvas",
     "islm_expectations_canvas",
     "five_panel_canvas",
     "four_panel_canvas",
     "keynesian_cross_canvas",
     "linked_panels_canvas",
+    "lm_derivation_canvas",
     "money_demand_canvas",
     "money_market_canvas",
     "multiplier_canvas",

@@ -23,6 +23,9 @@ All notable changes to `macro-viz` will be documented in this file.
 
 ### Added
 
+- `macro_viz.transmission` and four fixed linked figures derive IS from goods markets, LM from
+  money markets, AD from IS-LM, and AS from the labour market and production function. Standalone
+  IS-LM and AD-AS remain available through `islm_canvas` and `adas_canvas`.
 - `save_gif` animates builders that return a grid of panels; `examples/scripts/panels_animation.py`
   reveals the steps A, B, C of the capital and money-illusion scenarios one after another.
 - Initial installable package scaffold and development checks.
