@@ -6,6 +6,7 @@ from collections.abc import Mapping
 
 from mosaickit import CanvasGrid
 from mosaickit.canvas.grid_link import GridLink
+from mosaickit.layout import View, centered_view, clip_polyline, extend_line_through
 
 from macro_viz.errors import ValidationError
 from macro_viz.i18n import Labels
@@ -13,6 +14,7 @@ from macro_viz.transmission import ADDerivation
 from macro_viz.visuals._theory import (
     DEFAULT_SAMPLES,
     EXTENT,
+    HEADROOM,
     curve,
     drop_lines,
     marked_point,
@@ -31,12 +33,7 @@ from macro_viz.visuals.transmission._preset import (
     AD_TAIL,
     LM_DISPLAY_SLOPE,
 )
-from macro_viz.visuals.transmission._shared import grid, indexed, short_line_through
-
-
-def _data_slope(points: list[tuple[float, float]]) -> float:
-    (x0, y0), (x1, y1) = points[0], points[-1]
-    return abs((y1 - y0) / (x1 - x0))
+from macro_viz.visuals.transmission._shared import grid, indexed
 
 
 def ad_derivation_canvas(
@@ -55,28 +52,41 @@ def ad_derivation_canvas(
         raise ValidationError("equilibrium rates must be non-negative to draw an AD derivation")
     text = Labels(labels)
     first, last = states[0], states[-1]
+    if first.output == last.output:
+        raise ValidationError("the solved outputs must differ to draw an AD derivation")
     # plot in display coordinates: A and B sit at the centre of each panel and the axis
     # lengths follow the screen slopes, so IS, LM and AD read as gentle lines
-    aspect = height / width
-    gap = abs(last.output - first.output)
-    if gap <= 0:
-        raise ValidationError("the solved outputs must differ to draw an AD derivation")
-    span = gap / AD_GAP_SHARE
-    lm_slope = _data_slope(lm_curve(first.model, 1.0, 2))
-    rate_span = lm_slope * span * aspect / LM_DISPLAY_SLOPE
-    ad_slope = abs(last.price - first.price) / gap
-    price_span = ad_slope * span * aspect / AD_DISPLAY_SLOPE
-    output_origin = (first.output + last.output) / 2 - span / 2
-    rate_origin = (first.rate + last.rate) / 2 - rate_span / 2
-    price_origin = (first.price + last.price) / 2 - price_span / 2
+    lm_chord = lm_curve(first.model, 1.0, 2)
+    lm_slope = abs((lm_chord[-1][1] - lm_chord[0][1]) / (lm_chord[-1][0] - lm_chord[0][0]))
+    kwargs = {"gap_share": AD_GAP_SHARE, "width": width, "height": height}
+    upper_view = centered_view(
+        [(first.output, first.rate), (last.output, last.rate)],
+        display_slope=LM_DISPLAY_SLOPE,
+        data_slope=lm_slope,
+        **kwargs,
+    )
+    lower_view = centered_view(
+        [(first.output, first.price), (last.output, last.price)],
+        display_slope=AD_DISPLAY_SLOPE,
+        **kwargs,
+    )
 
-    def shown(output: float, vertical: float, origin: float) -> tuple[float, float]:
-        return output - output_origin, vertical - origin
+    def line(
+        view: View, points: list[tuple[float, float]], tail: float
+    ) -> list[tuple[float, float]]:
+        shown = [view.shift(point) for point in sorted(points)]
+        return list(
+            clip_polyline(
+                extend_line_through(shown, before=tail),
+                (0.0, HEADROOM * view.x_span),
+                (0.0, HEADROOM * view.y_span),
+            )
+        )
 
     rates = sorted({state.rate for state in states})
     top = theory_canvas(
-        span,
-        rate_span,
+        upper_view.x_span,
+        upper_view.y_span,
         labels=text,
         x_label_id="islm.axis.output",
         y_label_id="islm.axis.rate",
@@ -87,20 +97,15 @@ def ad_derivation_canvas(
     top.rising_names_above = True
     top.extend(
         curve(
-            short_line_through(
-                [shown(first.model.is_output(rate), rate, rate_origin) for rate in rates],
-                span,
-                rate_span,
-                AD_ISLM_TAIL,
-            ),
+            line(upper_view, [(first.model.is_output(rate), rate) for rate in rates], AD_ISLM_TAIL),
             layer_id="macro.transmission.ad.is",
             role="macro.curve.primary",
             label=text("islm.curve.is"),
         )
     )
     bottom = theory_canvas(
-        span,
-        price_span,
+        lower_view.x_span,
+        lower_view.y_span,
         labels=text,
         x_label_id="adas.axis.output",
         y_label_id="adas.axis.price",
@@ -110,12 +115,7 @@ def ad_derivation_canvas(
     )
     bottom.extend(
         curve(
-            short_line_through(
-                [shown(state.output, state.price, price_origin) for state in states],
-                span,
-                price_span,
-                AD_TAIL,
-            ),
+            line(lower_view, [(state.output, state.price) for state in states], AD_TAIL),
             layer_id="macro.transmission.ad.curve",
             role="macro.curve.secondary",
             label=text("adas.curve.demand"),
@@ -124,8 +124,8 @@ def ad_derivation_canvas(
     # the money-market line moves left as the price rises, from A at its own rate
     top.add(
         shift_arrow(
-            shown(first.output, first.rate, rate_origin),
-            shown(last.model.lm_output(first.rate), first.rate, rate_origin),
+            upper_view.shift((first.output, first.rate)),
+            upper_view.shift((last.model.lm_output(first.rate), first.rate)),
             layer_id="macro.transmission.ad.lm.shift",
         )
     )
@@ -135,11 +135,8 @@ def ad_derivation_canvas(
     for index, state in enumerate(states):
         top.extend(
             curve(
-                short_line_through(
-                    [shown(state.model.lm_output(rate), rate, rate_origin) for rate in rates],
-                    span,
-                    rate_span,
-                    AD_LM_TAIL,
+                line(
+                    upper_view, [(state.model.lm_output(rate), rate) for rate in rates], AD_LM_TAIL
                 ),
                 layer_id=f"macro.transmission.ad.lm.{index}",
                 role="macro.curve.secondary" if index == 0 else "macro.curve.secondary.shifted",
@@ -149,8 +146,8 @@ def ad_derivation_canvas(
                 ),
             )
         )
-        upper = shown(state.output, state.rate, rate_origin)
-        lower = shown(state.output, state.price, price_origin)
+        upper = upper_view.shift((state.output, state.rate))
+        lower = lower_view.shift((state.output, state.price))
         top.extend(
             marked_point(
                 upper,
