@@ -19,7 +19,7 @@ from collections.abc import Callable
 from dataclasses import dataclass, replace
 from numbers import Real
 
-from macro_viz.errors import ValidationError
+from macro_viz.core.errors import ValidationError
 
 DEFAULT_TOLERANCE = 1e-12
 """Absolute accuracy of the roots found by bisection."""

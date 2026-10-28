@@ -12,7 +12,7 @@ from dataclasses import dataclass
 
 from macro_viz.adas.analysis import ASADShift
 from macro_viz.adas.models import ASADEquilibrium, ASADModel, Gap
-from macro_viz.errors import ValidationError
+from macro_viz.core.errors import ValidationError
 
 DEFAULT_ROUNDS = 0
 """How many expectation revisions a path lists between the impact of a shock and the medium run."""

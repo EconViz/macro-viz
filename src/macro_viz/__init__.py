@@ -1,7 +1,7 @@
 """Textbook macroeconomic analysis and diagrams for EconViz."""
 
-from macro_viz.config import Config
-from macro_viz.errors import LabelPlacementWarning, MacroVizError, ValidationError
+from macro_viz.core.config import Config
+from macro_viz.core.errors import LabelPlacementWarning, MacroVizError, ValidationError
 
 __version__ = "1.0.0b1"
 

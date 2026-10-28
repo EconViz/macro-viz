@@ -13,15 +13,15 @@ from mosaickit import (
 )
 from mosaickit.layout.labels import LabelOptions
 
-from macro_viz.panels import (
+from macro_viz.adas.linked import (
     PanelSpec,
 )
-from macro_viz.panels.arrows import ShiftArrow
-from macro_viz.panels.curves import (
+from macro_viz.adas.linked.arrows import ShiftArrow
+from macro_viz.adas.linked.curves import (
     KEY_DIGITS,
     CurveSpec,
 )
-from macro_viz.panels.layout import DIAGONAL
+from macro_viz.adas.linked.layout import DIAGONAL
 from macro_viz.visuals._kit import axes_layers, canvas_spec, new_canvas
 from macro_viz.visuals._labels import (
     PANEL_CURVE_SIDES,

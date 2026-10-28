@@ -10,7 +10,7 @@ from __future__ import annotations
 
 from macro_viz.adas.analysis import ASADShift, analyze_demand_shock
 from macro_viz.adas.models import ASADModel
-from macro_viz.errors import ValidationError
+from macro_viz.core.errors import ValidationError
 
 
 def analyze_devaluation(

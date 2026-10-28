@@ -5,21 +5,21 @@ from __future__ import annotations
 from collections.abc import Mapping, Sequence
 from dataclasses import dataclass, replace
 
-from macro_viz.i18n import Labels
-from macro_viz.panels import (
+from macro_viz.adas.linked import (
     CurveOptions,
     PanelLayout,
     PanelSpec,
     PanelState,
 )
-from macro_viz.panels.curves import (
+from macro_viz.adas.linked.curves import (
     CurveSpec,
     Ranges,
     Subscripted,
     clip,
 )
-from macro_viz.panels.layout import DIAGONAL
-from macro_viz.panels.model import N, Y
+from macro_viz.adas.linked.layout import DIAGONAL
+from macro_viz.adas.linked.model import N, Y
+from macro_viz.core.i18n import Labels
 from macro_viz.visuals.panels._preset import SYMBOL_IDS
 
 

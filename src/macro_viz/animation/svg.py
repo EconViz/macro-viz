@@ -11,7 +11,7 @@ from mosaickit import (
     Layer,
 )
 
-from macro_viz.errors import ValidationError
+from macro_viz.core.errors import ValidationError
 
 if TYPE_CHECKING:  # pragma: no cover
     from kinetickit.scene.node import Node

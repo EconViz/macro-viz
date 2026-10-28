@@ -1,21 +1,10 @@
-"""Shares and gaps of the AD-AS figures."""
+"""Compatibility import for the reorganized macro-viz API."""
 
-from __future__ import annotations
+from importlib import import_module as _import_module
 
-SHIFT_ARROW_SHARE = 0.55
-"""Height of the arrow showing a curve's shift, as a share of the vertical axis."""
+_target = _import_module("macro_viz.adas.visuals._preset")
+globals().update({name: value for name, value in vars(_target).items() if not name.startswith("_")})
 
-AMBIGUOUS_SPAN_SHARE = 0.08
-"""Length of each arrow of an ambiguous shift, as a share of the horizontal axis."""
 
-DEMAND_FLOOR_SHARE = 0.2
-"""Demand curves end at this share of the price axis, so shifted curves end side by side."""
-
-MARKED_OUTPUTS = 2
-"""How many leading points of an adjustment path get a mark for their output on the axis."""
-
-SAME_OUTPUT = 0.01
-"""Outputs within this share of natural output are not marked apart from it."""
-
-LABEL_GAP = 4.0
-"""Gap in points between an arrow and the text beside it."""
+def __getattr__(name: str) -> object:
+    return getattr(_target, name)

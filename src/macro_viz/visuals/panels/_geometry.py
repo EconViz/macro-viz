@@ -10,17 +10,17 @@ from bezierkit import Point as BezierPoint
 from bezierkit.construction import RotationConnector
 from mosaickit.layout import Rect, place_rotation_marker
 
-from macro_viz.errors import ValidationError
-from macro_viz.panels import (
+from macro_viz.adas.linked import (
     ArrowOptions,
     PanelSpec,
     PanelState,
 )
-from macro_viz.panels.arrows import ShiftArrow
-from macro_viz.panels.curves import (
+from macro_viz.adas.linked.arrows import ShiftArrow
+from macro_viz.adas.linked.curves import (
     CurveSpec,
 )
-from macro_viz.panels.movement import MovementKind
+from macro_viz.adas.linked.movement import MovementKind
+from macro_viz.core.errors import ValidationError
 from macro_viz.visuals.panels._preset import ROTATION_SAMPLES
 
 

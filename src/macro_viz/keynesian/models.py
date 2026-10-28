@@ -18,8 +18,8 @@ from dataclasses import dataclass
 from numbers import Real
 from typing import Protocol
 
-from macro_viz.direction import Direction
-from macro_viz.errors import ValidationError
+from macro_viz.core.direction import Direction
+from macro_viz.core.errors import ValidationError
 
 DEFAULT_TOLERANCE = 1e-9
 """Absolute accuracy of the root found for a curved demand function."""

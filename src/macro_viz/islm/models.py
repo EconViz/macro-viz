@@ -20,7 +20,7 @@ import math
 from dataclasses import dataclass, replace
 from numbers import Real
 
-from macro_viz.errors import ValidationError
+from macro_viz.core.errors import ValidationError
 
 
 def _finite(name: str, value: float) -> float:

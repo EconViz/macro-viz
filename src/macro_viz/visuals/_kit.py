@@ -3,7 +3,7 @@
 A figure is a list of public MosaicKit layers on a ``Canvas``. This module holds the parts
 every figure needs: the canvas that applies the label-group nudges of the configuration,
 axes with arrowheads and their titles. It names no colour, font,
-or size: those come from the theme roles of ``macro_viz.themes`` and the configuration.
+or size: those come from the theme roles of ``macro_viz.core.themes`` and the configuration.
 """
 
 from __future__ import annotations
@@ -25,8 +25,8 @@ from mosaickit import (
 from mosaickit.layout.labels import LabelOptions, PlacementWarning
 from mosaickit.styles.nudge import Nudge
 
-from macro_viz.config import active_config
-from macro_viz.label_groups import label_group
+from macro_viz.core.config import active_config
+from macro_viz.core.label_groups import label_group
 from macro_viz.visuals._labels import (
     LABEL_OPTIONS,
     NAME_SUFFIX,

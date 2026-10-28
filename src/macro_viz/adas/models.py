@@ -21,7 +21,7 @@ from dataclasses import dataclass, replace
 from enum import Enum
 from numbers import Real
 
-from macro_viz.errors import ValidationError
+from macro_viz.core.errors import ValidationError
 
 DEFAULT_TOLERANCE = 1e-10
 """Absolute accuracy of the output found by bisection."""

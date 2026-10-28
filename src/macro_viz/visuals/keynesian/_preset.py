@@ -1,13 +1,10 @@
-"""Placement presets of the Keynesian goods-market figures."""
+"""Compatibility import for the reorganized macro-viz API."""
 
-SLOPE_RUN_SHARE = 0.2
-"""Length of the slope triangle's run as a share of the horizontal axis."""
+from importlib import import_module as _import_module
 
-SLOPE_POSITION = 0.55
-"""Where along the horizontal axis the slope triangle starts, as a share of its length."""
+_target = _import_module("macro_viz.keynesian.visuals._preset")
+globals().update({name: value for name, value in vars(_target).items() if not name.startswith("_")})
 
-SHIFT_ARROW_POSITION = 0.7
-"""Where along the horizontal axis the arrow showing a curve's shift stands, as a share of it."""
 
-LABEL_GAP = 4.0
-"""Gap in points between a line and the text beside it."""
+def __getattr__(name: str) -> object:
+    return getattr(_target, name)

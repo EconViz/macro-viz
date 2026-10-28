@@ -6,7 +6,7 @@ from dataclasses import dataclass
 from enum import Enum
 
 from macro_viz.adas.models import AggregateDemand, AggregateSupply, ASADEquilibrium, ASADModel
-from macro_viz.direction import Direction
+from macro_viz.core.direction import Direction
 
 
 class Shock(str, Enum):

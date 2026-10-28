@@ -26,8 +26,8 @@ from mosaickit import (
 )
 from mosaickit.layout import clip_polyline
 
-from macro_viz.errors import ValidationError
-from macro_viz.i18n import Labels
+from macro_viz.core.errors import ValidationError
+from macro_viz.core.i18n import Labels
 from macro_viz.visuals._kit import MacroCanvas, axes_layers, canvas_spec, new_canvas
 from macro_viz.visuals._labels import family_end
 

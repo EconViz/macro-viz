@@ -18,8 +18,8 @@ from dataclasses import dataclass
 from enum import Enum
 from numbers import Real
 
-from macro_viz.direction import Direction
-from macro_viz.errors import ValidationError
+from macro_viz.core.direction import Direction
+from macro_viz.core.errors import ValidationError
 
 DEFAULT_TOLERANCE = 1e-10
 """Absolute accuracy of the interest rate found by bisection."""
