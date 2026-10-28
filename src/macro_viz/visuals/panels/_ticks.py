@@ -9,16 +9,16 @@ from mosaickit import (
     TextLayer,
 )
 
-from macro_viz.panels import (
+from macro_viz.adas.linked import (
     Hop,
     PanelLayout,
     PanelSpec,
     PanelState,
 )
-from macro_viz.panels.curves import (
+from macro_viz.adas.linked.curves import (
     KEY_DIGITS,
 )
-from macro_viz.panels.layout import X_AXIS
+from macro_viz.adas.linked.layout import X_AXIS
 from macro_viz.visuals._labels import POINTS_PER_INCH
 from macro_viz.visuals.panels._context import _Context, _present
 

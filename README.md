@@ -97,7 +97,8 @@ AS-AD functions.
 
 ### Curve derivations
 
-`macro_viz.transmission` provides four renderer-free sweeps and matching linked figures:
+The IS and LM derivations live in `macro_viz.islm`; AD and AS derivations live in
+`macro_viz.adas`. Each topic also owns its matching figure under `visuals`:
 
 - `ISDerivation` varies the stated real interest rates in an investment function;
   `is_derivation_canvas` uses the fixed three-quadrant layout AE–Y (upper left), r–Y (lower
@@ -114,8 +115,8 @@ not infer a policy or event. The independent equilibrium figures remain `islm_ca
 `adas_canvas(model)`.
 
 ```python
-from macro_viz.transmission import ADDerivation
-from macro_viz.visuals import ad_derivation_canvas
+from macro_viz.adas import ADDerivation
+from macro_viz.adas.visuals import ad_derivation_canvas
 
 derivation = ADDerivation(islm, nominal_money=20, prices=(1, 2))
 ad_derivation_canvas(derivation).save("ad-derivation.svg")
@@ -129,7 +130,7 @@ does not infer them from an event or policy name. The built-in schematic preset 
 directions visible, solves the shared equilibrium, and keeps every panel consistent:
 
 ```python
-from macro_viz.panels import Curve, RotationDirection, Scenario, ShiftDirection, Step
+from macro_viz.adas.linked import Curve, RotationDirection, Scenario, ShiftDirection, Step
 from macro_viz.visuals import five_panel_canvas
 
 movements = (
@@ -150,7 +151,7 @@ five_panel_canvas(scenario).save("reshoring.svg")
 
 The caller is responsible for the economic interpretation. Translation directions are `LEFT`,
 `RIGHT`, `UP`, and `DOWN`; rotations are `INWARD` and `OUTWARD`. A movement has a fixed textbook
-display magnitude, not an empirical size. Equations (documented in `macro_viz.panels.model`):
+display magnitude, not an empirical size. Equations (documented in `macro_viz.adas.linked.model`):
 
 ```text
 W = p f(N, K)     labour demand          W = pe h(N)      labour supply
@@ -270,6 +271,12 @@ domain model -> analysis -> typed result -> visual builder -> MosaicKit layers
 
 Domain and analysis modules remain renderer-neutral. Visual builders use public MosaicKit scenes
 and layers rather than importing Matplotlib or implementing a separate drawing layer.
+
+Topic packages (`keynesian`, `money`, `islm`, `adas`, `labor`, `open_economy`, and `growth`)
+own their models, analysis, and figures. `adas.linked` owns the shared economic scenario for
+four- and five-panel diagrams; `visuals.panels` owns their common layout. `core` holds shared
+configuration, language, errors, and validation. The previous `macro_viz.transmission`,
+`macro_viz.panels`, and `macro_viz.visuals.*` import paths remain available for compatibility.
 
 `mosaickit` is the drawing dependency and `bezierkit` constructs rotation markers.
 `kinetickit[raster]` is the optional

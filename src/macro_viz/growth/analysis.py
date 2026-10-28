@@ -4,8 +4,8 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
-from macro_viz.direction import Direction
-from macro_viz.errors import ValidationError
+from macro_viz.core.direction import Direction
+from macro_viz.core.errors import ValidationError
 from macro_viz.growth.models import Solow, SolowPath
 
 

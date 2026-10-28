@@ -8,7 +8,7 @@ from pathlib import Path
 from typing import Any
 
 from macro_viz.animation._preset import DEFAULT_DPI, DEFAULT_FPS, Builder
-from macro_viz.errors import ValidationError
+from macro_viz.core.errors import ValidationError
 
 
 def linear_values(start: float, stop: float, frames: int) -> tuple[float, ...]:

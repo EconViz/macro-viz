@@ -15,9 +15,9 @@ from mosaickit.diagram import Diagram
 from mosaickit.layout import View
 from mosaickit.styles.nudge import Nudge
 
-from macro_viz.config import active_config
-from macro_viz.i18n import Labels
-from macro_viz.label_groups import label_group
+from macro_viz.core.config import active_config
+from macro_viz.core.i18n import Labels
+from macro_viz.core.label_groups import label_group
 
 PRIMARY = "macro.curve.primary"
 """Role of a curve that carries the argument of the figure."""

@@ -1,39 +1,10 @@
-"""Renderer-free derivation of the LM curve."""
+"""Compatibility import for the reorganized macro-viz API."""
 
-from __future__ import annotations
+from importlib import import_module as _import_module
 
-from dataclasses import dataclass
-
-from macro_viz.money import MoneyMarket
-from macro_viz.transmission._validation import sweep_values
+_target = _import_module("macro_viz.islm.lm_derivation")
+globals().update({name: value for name, value in vars(_target).items() if not name.startswith("_")})
 
 
-@dataclass(frozen=True, slots=True)
-class LMState:
-    """One money-market equilibrium and its output on the derived LM curve."""
-
-    output: float
-    market: MoneyMarket
-    rate: float
-
-
-@dataclass(frozen=True, slots=True)
-class LMDerivation:
-    """Derive LM by varying real income in the demand for real money balances."""
-
-    money_market: MoneyMarket
-    outputs: tuple[float, ...]
-
-    def __post_init__(self) -> None:
-        object.__setattr__(self, "outputs", sweep_values("output", self.outputs, positive=True))
-
-    def market(self, output: float) -> MoneyMarket:
-        return self.money_market.with_nominal_income(float(output))
-
-    @property
-    def states(self) -> tuple[LMState, ...]:
-        return tuple(
-            LMState(output, market, market.equilibrium().rate)
-            for output in self.outputs
-            for market in (self.market(output),)
-        )
+def __getattr__(name: str) -> object:
+    return getattr(_target, name)

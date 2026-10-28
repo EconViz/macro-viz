@@ -19,8 +19,8 @@ import math
 from dataclasses import dataclass, replace
 from numbers import Real
 
-from macro_viz.direction import Direction
-from macro_viz.errors import ValidationError
+from macro_viz.core.direction import Direction
+from macro_viz.core.errors import ValidationError
 from macro_viz.islm.models import ISLM
 from macro_viz.keynesian.models import GoodsMarketEquilibrium, KeynesianCross
 

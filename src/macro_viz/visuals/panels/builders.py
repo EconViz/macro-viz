@@ -13,9 +13,7 @@ from mosaickit import (
 from mosaickit.canvas.grid_link import GridLink
 from mosaickit.layout.labels import LabelOptions
 
-from macro_viz.errors import ValidationError
-from macro_viz.i18n import Labels
-from macro_viz.panels import (
+from macro_viz.adas.linked import (
     ArrowOptions,
     CurveOptions,
     Mode,
@@ -27,9 +25,11 @@ from macro_viz.panels import (
     four_panel_layout,
     shift_arrows,
 )
-from macro_viz.panels.curves import (
+from macro_viz.adas.linked.curves import (
     DEFAULT_SAMPLES,
 )
+from macro_viz.core.errors import ValidationError
+from macro_viz.core.i18n import Labels
 from macro_viz.visuals._labels import LABEL_OPTIONS
 from macro_viz.visuals.panels._context import _aspect, _Context, _unit_height, _Window
 from macro_viz.visuals.panels._geometry import _rotation_arrows, _shifted_states

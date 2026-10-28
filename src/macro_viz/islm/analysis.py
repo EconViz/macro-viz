@@ -5,7 +5,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from enum import Enum
 
-from macro_viz.direction import Direction
+from macro_viz.core.direction import Direction
 from macro_viz.islm.models import ISLM, ISLMEquilibrium
 
 

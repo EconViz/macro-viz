@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from macro_viz.direction import Direction
+from macro_viz.core.direction import Direction
 from macro_viz.keynesian.models import AutonomousShift, KeynesianCross
 
 

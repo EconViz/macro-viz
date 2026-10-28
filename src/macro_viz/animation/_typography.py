@@ -6,8 +6,8 @@ from collections.abc import Sequence
 from pathlib import Path
 from typing import Any
 
-from macro_viz.config import active_config
-from macro_viz.errors import ValidationError
+from macro_viz.core.config import active_config
+from macro_viz.core.errors import ValidationError
 
 
 def _horizontal(anchor: str) -> str:

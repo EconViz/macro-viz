@@ -7,7 +7,7 @@ from mosaickit import (
     Stroke,
 )
 
-from macro_viz.panels.model import N, P, R, W, Y
+from macro_viz.adas.linked.model import N, P, R, W, Y
 
 COLUMN_GAP = 0.12
 """Default gap between grid columns, as a share of a column's width."""

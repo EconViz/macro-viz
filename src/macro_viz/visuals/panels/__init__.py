@@ -4,7 +4,7 @@ Every panel is an ordinary canvas whose axes show a solved variable over the sam
 every other panel that shows that variable, so a value read in one panel lands on the same pixel
 column (or row) in the next. The dashed paths are ``GridLink`` objects drawn from data
 coordinates, never from positions typed in. Curves, points, ticks and arrows come from
-``macro_viz.panels`` and are drawn with the ``macro.*`` theme roles; all text is looked up in
+``macro_viz.adas.linked`` and are drawn with the ``macro.*`` theme roles; all text is looked up in
 the locale table."""
 
 from __future__ import annotations

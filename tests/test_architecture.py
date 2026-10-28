@@ -15,14 +15,9 @@ DOMAIN_MODULES = (
     "adas",
     "money",
     "islm",
-    "inflation",
+    "labor",
     "growth",
-    "dynamics",
-    "new_keynesian",
-    "graduate",
     "open_economy",
-    "transmission",
-    "panels",
 )
 
 
@@ -59,6 +54,7 @@ def test_economic_domain_does_not_import_mosaickit() -> None:
         for root in roots
         if root.exists()
         for path in root.rglob("*.py")
+        if "visuals" not in path.relative_to(root).parts and path.stem != "visuals"
         if (imports := _imports_matching(path, "mosaickit"))
     }
     assert offenders == {}

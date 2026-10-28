@@ -27,8 +27,8 @@ from mosaickit.label_scene import CurveEnd, SceneLabelOptions, curve_end, place_
 from mosaickit.layout import Rect
 from mosaickit.layout.labels import LabelOptions, PlacementWarning
 
-from macro_viz.config import active_config
-from macro_viz.errors import LabelPlacementWarning, ValidationError
+from macro_viz.core.config import active_config
+from macro_viz.core.errors import LabelPlacementWarning, ValidationError
 
 Point = tuple[float, float]
 
